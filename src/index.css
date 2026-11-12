@@ -1,0 +1,223 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-main: #090B12;
+    --bg-secondary: #111522;
+    --accent-primary: #E63946;
+    --accent-secondary: #A855F7;
+    --accent-gold: #E7B65B;
+    --text-primary: #F5F5F7;
+  }
+
+  html {
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    background-color: #050711;
+    color: #F5F5F7;
+    color-scheme: dark;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+
+  .font-mono, code, pre {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.glass-panel {
+  background: rgba(11, 15, 28, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(245, 245, 247, 0.12);
+  box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+}
+
+.glass-panel-elevated {
+  background: rgba(13, 18, 34, 0.84);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(245, 245, 247, 0.16);
+  box-shadow: 0 20px 48px -16px rgba(0, 0, 0, 0.72);
+}
+
+.glass-panel-day {
+  background: rgba(28, 33, 50, 0.74);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(252, 211, 77, 0.24);
+  box-shadow: 0 12px 36px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* GPU-only Cinematic Environment Keyframes */
+@keyframes fogDrift {
+  0% {
+    transform: translate3d(-6%, 0, 0) scale(1.04);
+  }
+  50% {
+    transform: translate3d(6%, -1.5%, 0) scale(1.08);
+  }
+  100% {
+    transform: translate3d(-6%, 0, 0) scale(1.04);
+  }
+}
+
+@keyframes cloudDrift {
+  0% {
+    transform: translate3d(-10%, 0, 0);
+  }
+  50% {
+    transform: translate3d(10%, 0, 0);
+  }
+  100% {
+    transform: translate3d(-10%, 0, 0);
+  }
+}
+
+@keyframes starTwinkle {
+  0%, 100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@keyframes particleRise {
+  0% {
+    transform: translate3d(0, 20px, 0);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.7;
+  }
+  75% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate3d(12px, -90px, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes sunRaysSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes cameraPan {
+  0%, 100% {
+    transform: translate3d(-1.5%, 0, 0) scale(1.03);
+  }
+  50% {
+    transform: translate3d(1.5%, -0.5%, 0) scale(1.05);
+  }
+}
+
+@keyframes rainFall {
+  0% {
+    transform: translate3d(0, -15vh, 0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.45;
+  }
+  85% {
+    opacity: 0.45;
+  }
+  100% {
+    transform: translate3d(-16px, 105vh, 0);
+    opacity: 0;
+  }
+}
+
+.animate-fog-slow {
+  animation: fogDrift 26s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-fog-mid {
+  animation: fogDrift 19s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-fog-reverse {
+  animation: fogDrift 34s ease-in-out infinite reverse;
+  will-change: transform;
+}
+
+.animate-cloud-slow {
+  animation: cloudDrift 32s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-star-twinkle {
+  animation: starTwinkle 4.5s ease-in-out infinite;
+  will-change: opacity;
+}
+
+.animate-particle-rise {
+  animation: particleRise 8s linear infinite;
+  will-change: transform, opacity;
+}
+
+.animate-sun-rays {
+  animation: sunRaysSpin 60s linear infinite;
+  will-change: transform;
+}
+
+.animate-camera-pan {
+  animation: cameraPan 28s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-rain-fall {
+  animation: rainFall 1.3s linear infinite;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fog-slow,
+  .animate-fog-mid,
+  .animate-fog-reverse,
+  .animate-cloud-slow,
+  .animate-star-twinkle,
+  .animate-particle-rise,
+  .animate-sun-rays,
+  .animate-camera-pan,
+  .animate-rain-fall {
+    animation: none !important;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(5, 7, 17, 0.6);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(245, 245, 247, 0.16);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 245, 247, 0.28);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}

@@ -1,0 +1,3418 @@
+{
+  "users": [
+    {
+      "id": "usr_admin",
+      "username": "DonCorleone",
+      "email": "admin@mafiapro.uz",
+      "passwordHash": "b32c90b55a8ff5188b8ef4cf95198e9a:c61a34c594e7e5d991a18c8e13c7fcbe79e040da7a9aac7242d0ef408739852c7b690b9e5ffed627da6019e22f7c7f7673934a5fbe62c8bba232b5feda379e63",
+      "avatar": "crimson",
+      "country": "UZ",
+      "role": "ADMIN",
+      "isBanned": false,
+      "isFlagged": false,
+      "warningsCount": 0,
+      "notifications": [],
+      "level": 12,
+      "xp": 2850,
+      "weeklyXp": 0,
+      "monthlyXp": 0,
+      "rating": 1000,
+      "tournamentPoints": 0,
+      "gold": 150,
+      "diamonds": 5,
+      "totalGames": 28,
+      "wins": 20,
+      "losses": 8,
+      "weeklyWins": 0,
+      "monthlyWins": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "favoriteRole": "don",
+      "rolePlayCounts": {
+        "don": 12,
+        "sheriff": 8,
+        "consigliere": 8
+      },
+      "modePlayCounts": {},
+      "achievements": [
+        "first_blood",
+        "winner_3",
+        "veteran_10",
+        "mafia_master",
+        "town_hero"
+      ],
+      "unlockedTitles": [],
+      "ownedCosmetics": [],
+      "equippedCosmetics": {},
+      "subscription": {
+        "tier": "FREE",
+        "status": "NONE",
+        "verified": false
+      },
+      "dailyReward": {
+        "streak": 0,
+        "lastClaimAt": 0,
+        "totalClaims": 0
+      },
+      "missionProgress": {},
+      "friends": [],
+      "friendRequestsIn": [],
+      "friendRequestsOut": [],
+      "blockedUsers": [],
+      "recentPlayers": [],
+      "createdAt": 1791780958970,
+      "lastSeenAt": 1794372958970
+    },
+    {
+      "id": "usr_sheriff_uz",
+      "username": "SherifTemur",
+      "email": "temur@mafiapro.uz",
+      "passwordHash": "401a8cf5a9a22886b1fa2c6c617b248f:839ab6de0a7db4cba5548a5f7b191501603eea8f484105b205f867d05023b40d8b9e4c5a011b30b14c1ba0cc10e0171d9abebb361d2c46cee75e25cd674f5e3f",
+      "avatar": "gold",
+      "country": "UZ",
+      "role": "USER",
+      "isBanned": false,
+      "isFlagged": false,
+      "warningsCount": 0,
+      "notifications": [],
+      "level": 9,
+      "xp": 1920,
+      "weeklyXp": 0,
+      "monthlyXp": 0,
+      "rating": 1000,
+      "tournamentPoints": 0,
+      "gold": 150,
+      "diamonds": 5,
+      "totalGames": 19,
+      "wins": 13,
+      "losses": 6,
+      "weeklyWins": 0,
+      "monthlyWins": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "favoriteRole": "sheriff",
+      "rolePlayCounts": {
+        "sheriff": 11,
+        "doctor": 5,
+        "citizen": 3
+      },
+      "modePlayCounts": {},
+      "achievements": [
+        "first_blood",
+        "winner_3",
+        "veteran_10",
+        "town_hero"
+      ],
+      "unlockedTitles": [],
+      "ownedCosmetics": [],
+      "equippedCosmetics": {},
+      "subscription": {
+        "tier": "FREE",
+        "status": "NONE",
+        "verified": false
+      },
+      "dailyReward": {
+        "streak": 0,
+        "lastClaimAt": 0,
+        "totalClaims": 0
+      },
+      "missionProgress": {},
+      "friends": [],
+      "friendRequestsIn": [],
+      "friendRequestsOut": [],
+      "blockedUsers": [],
+      "recentPlayers": [],
+      "createdAt": 1792644958970,
+      "lastSeenAt": 1794369358970
+    },
+    {
+      "id": "usr_violet_ru",
+      "username": "ShadowElena",
+      "email": "elena@mafiapro.uz",
+      "passwordHash": "02389b32735dfe38954bba2376657e6f:dc6bde9b833b5dbec50f971c93503f2676161532e343b72b24c766fe6a05e7ccb91c09e864f014f40865935759257325ee073c12a13f8e97ab7a65dcb21bebba",
+      "avatar": "violet",
+      "country": "UZ",
+      "role": "USER",
+      "isBanned": false,
+      "isFlagged": false,
+      "warningsCount": 0,
+      "notifications": [],
+      "level": 8,
+      "xp": 1640,
+      "weeklyXp": 0,
+      "monthlyXp": 0,
+      "rating": 1000,
+      "tournamentPoints": 0,
+      "gold": 150,
+      "diamonds": 5,
+      "totalGames": 16,
+      "wins": 10,
+      "losses": 6,
+      "weeklyWins": 0,
+      "monthlyWins": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "favoriteRole": "consigliere",
+      "rolePlayCounts": {
+        "consigliere": 7,
+        "witch": 5,
+        "doctor": 4
+      },
+      "modePlayCounts": {},
+      "achievements": [
+        "first_blood",
+        "winner_3",
+        "mafia_master"
+      ],
+      "unlockedTitles": [],
+      "ownedCosmetics": [],
+      "equippedCosmetics": {},
+      "subscription": {
+        "tier": "FREE",
+        "status": "NONE",
+        "verified": false
+      },
+      "dailyReward": {
+        "streak": 0,
+        "lastClaimAt": 0,
+        "totalClaims": 0
+      },
+      "missionProgress": {},
+      "friends": [],
+      "friendRequestsIn": [],
+      "friendRequestsOut": [],
+      "blockedUsers": [],
+      "recentPlayers": [],
+      "createdAt": 1793163358970,
+      "lastSeenAt": 1794365758970
+    },
+    {
+      "id": "usr_82a68f37c864",
+      "username": "Xisomiddin",
+      "email": "puc9809@gmail.com",
+      "passwordHash": "9456e297c114f93e6112424e6ea85454:e755de53df12d23f9e2cfde623e2abb7c21a771f1e3cafb9649234f34381dd038df2240c992c3b03e8513918fbe80eb9898262d417309f013b20d390edbdf876",
+      "avatar": "crimson",
+      "country": "UZ",
+      "role": "USER",
+      "isBanned": false,
+      "isFlagged": false,
+      "warningsCount": 0,
+      "notifications": [],
+      "level": 3,
+      "xp": 590,
+      "weeklyXp": 0,
+      "monthlyXp": 0,
+      "rating": 1000,
+      "tournamentPoints": 0,
+      "gold": 150,
+      "diamonds": 5,
+      "totalGames": 3,
+      "wins": 1,
+      "losses": 2,
+      "weeklyWins": 0,
+      "monthlyWins": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "favoriteRole": "don",
+      "rolePlayCounts": {
+        "don": 2,
+        "citizen": 1
+      },
+      "modePlayCounts": {},
+      "achievements": [
+        "first_blood",
+        "town_hero"
+      ],
+      "unlockedTitles": [],
+      "ownedCosmetics": [],
+      "equippedCosmetics": {},
+      "subscription": {
+        "tier": "FREE",
+        "status": "NONE",
+        "verified": false
+      },
+      "dailyReward": {
+        "streak": 0,
+        "lastClaimAt": 0,
+        "totalClaims": 0
+      },
+      "missionProgress": {},
+      "friends": [],
+      "friendRequestsIn": [],
+      "friendRequestsOut": [],
+      "blockedUsers": [],
+      "recentPlayers": [],
+      "createdAt": 1794373045715,
+      "lastSeenAt": 1794373871694
+    },
+    {
+      "id": "usr_d48bacc064be",
+      "username": "EcoTester_12d9dce4",
+      "email": "eco1_12d9dce4@mafiapro.uz",
+      "passwordHash": "a46dc49da61d11a9688aba3b880e3f45:258ede5ea1376c3c34d013e35850c41afc98bceb77f9aaba1c2df31001a137233fc98ed3ac781d871e9bd4c73f55b48c32085b6db0ae3854f397a9b1fbf8a643",
+      "avatar": "crimson",
+      "country": "UZ",
+      "role": "USER",
+      "isBanned": false,
+      "isFlagged": false,
+      "warningsCount": 0,
+      "notifications": [],
+      "level": 8,
+      "xp": 3400,
+      "weeklyXp": 3400,
+      "monthlyXp": 3400,
+      "rating": 1028,
+      "tournamentPoints": 100,
+      "gold": 2515,
+      "diamonds": 45,
+      "totalGames": 1,
+      "wins": 1,
+      "losses": 0,
+      "weeklyWins": 1,
+      "monthlyWins": 1,
+      "winStreak": 1,
+      "bestWinStreak": 1,
+      "favoriteRole": "sheriff",
+      "favoriteMode": "CLASSIC",
+      "rolePlayCounts": {
+        "sheriff": 1
+      },
+      "modePlayCounts": {
+        "CLASSIC": 1
+      },
+      "achievements": [
+        "first_blood",
+        "first_win",
+        "perfect_victory",
+        "town_hero",
+        "master_detective",
+        "survivor_badge",
+        "level_5",
+        "tournament_champion"
+      ],
+      "unlockedTitles": [
+        "novice",
+        "master_detective",
+        "survivor",
+        "champion"
+      ],
+      "ownedCosmetics": [
+        "av_crimson_don"
+      ],
+      "equippedCosmetics": {
+        "AVATAR": "av_crimson_don"
+      },
+      "subscription": {
+        "tier": "ELITE",
+        "status": "CANCELLED",
+        "provider": "stripe",
+        "verified": true,
+        "expiresAt": 1796968046438
+      },
+      "dailyReward": {
+        "streak": 2,
+        "lastClaimAt": 1780401600000,
+        "totalClaims": 2
+      },
+      "missionProgress": {
+        "daily_play_2": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-11-11"
+        },
+        "weekly_play_7": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-W46"
+        },
+        "daily_win_1": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-11-11"
+        },
+        "weekly_win_4": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-W46"
+        },
+        "daily_survive_1": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-11-11"
+        }
+      },
+      "friends": [],
+      "friendRequestsIn": [],
+      "friendRequestsOut": [],
+      "blockedUsers": [],
+      "recentPlayers": [
+        {
+          "userId": "usr_ff512f8fbc93",
+          "username": "Rival",
+          "lastPlayedAt": 1794376046336
+        }
+      ],
+      "createdAt": 1794376045987,
+      "lastSeenAt": 1794376046337
+    },
+    {
+      "id": "usr_ff512f8fbc93",
+      "username": "EcoRival_12d9dce4",
+      "email": "eco2_12d9dce4@mafiapro.uz",
+      "passwordHash": "f672cad5fd578fa521453b3f5e083ea7:d1e5c5e1e2a7fe7bd019ddcc55e71b7ef6a9857a741c2df0cb2a641bc942ce91e2902fdcfc9475925c3cfe9dd9ed1c6f464f6bbcaa7306add02be82d35058d23",
+      "avatar": "gold",
+      "country": "RU",
+      "role": "USER",
+      "isBanned": false,
+      "isFlagged": false,
+      "warningsCount": 0,
+      "notifications": [],
+      "level": 1,
+      "xp": 395,
+      "weeklyXp": 395,
+      "monthlyXp": 395,
+      "rating": 988,
+      "tournamentPoints": 0,
+      "gold": 340,
+      "diamonds": 5,
+      "totalGames": 1,
+      "wins": 0,
+      "losses": 1,
+      "weeklyWins": 0,
+      "monthlyWins": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "favoriteRole": "mafia",
+      "favoriteMode": "CLASSIC",
+      "rolePlayCounts": {
+        "mafia": 1
+      },
+      "modePlayCounts": {
+        "CLASSIC": 1
+      },
+      "achievements": [
+        "first_blood",
+        "tournament_contender"
+      ],
+      "unlockedTitles": [
+        "novice"
+      ],
+      "ownedCosmetics": [],
+      "equippedCosmetics": {},
+      "subscription": {
+        "tier": "FREE",
+        "status": "NONE",
+        "verified": false
+      },
+      "dailyReward": {
+        "streak": 0,
+        "lastClaimAt": 0,
+        "totalClaims": 0
+      },
+      "missionProgress": {
+        "daily_play_2": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-11-11"
+        },
+        "weekly_play_7": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-W46"
+        },
+        "weekly_tournament": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-W46"
+        }
+      },
+      "friends": [],
+      "friendRequestsIn": [],
+      "friendRequestsOut": [],
+      "blockedUsers": [],
+      "recentPlayers": [
+        {
+          "userId": "usr_d48bacc064be",
+          "username": "EcoTester_12d9dce4",
+          "lastPlayedAt": 1794376046336
+        }
+      ],
+      "createdAt": 1794376046120,
+      "lastSeenAt": 1794376046337
+    },
+    {
+      "id": "usr_27a3472c0041",
+      "username": "EcoTester_4cb3fd7f",
+      "email": "eco1_4cb3fd7f@mafiapro.uz",
+      "passwordHash": "dc696cbe166c7b1f4135497cfb636bed:82039b8db487db1de0adc0ae438b575e9a1d2ea03eda1989cab5e4491680c08d161e8290ecfc3c0c6b25115c1e0e24c9971c4563354496587c71566176d16adb",
+      "avatar": "crimson",
+      "country": "UZ",
+      "role": "USER",
+      "isBanned": false,
+      "isFlagged": false,
+      "warningsCount": 0,
+      "notifications": [],
+      "level": 8,
+      "xp": 3400,
+      "weeklyXp": 3400,
+      "monthlyXp": 3400,
+      "rating": 1028,
+      "tournamentPoints": 100,
+      "gold": 2515,
+      "diamonds": 45,
+      "totalGames": 1,
+      "wins": 1,
+      "losses": 0,
+      "weeklyWins": 1,
+      "monthlyWins": 1,
+      "winStreak": 1,
+      "bestWinStreak": 1,
+      "favoriteRole": "sheriff",
+      "favoriteMode": "CLASSIC",
+      "rolePlayCounts": {
+        "sheriff": 1
+      },
+      "modePlayCounts": {
+        "CLASSIC": 1
+      },
+      "achievements": [
+        "first_blood",
+        "first_win",
+        "perfect_victory",
+        "town_hero",
+        "master_detective",
+        "survivor_badge",
+        "level_5",
+        "tournament_champion"
+      ],
+      "unlockedTitles": [
+        "novice",
+        "master_detective",
+        "survivor",
+        "champion"
+      ],
+      "ownedCosmetics": [
+        "av_crimson_don"
+      ],
+      "equippedCosmetics": {
+        "AVATAR": "av_crimson_don"
+      },
+      "subscription": {
+        "tier": "ELITE",
+        "status": "CANCELLED",
+        "provider": "stripe",
+        "verified": true,
+        "expiresAt": 1796968074928
+      },
+      "dailyReward": {
+        "streak": 2,
+        "lastClaimAt": 1780401600000,
+        "totalClaims": 2
+      },
+      "missionProgress": {
+        "daily_play_2": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-11-11"
+        },
+        "weekly_play_7": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-W46"
+        },
+        "daily_win_1": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-11-11"
+        },
+        "weekly_win_4": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-W46"
+        },
+        "daily_survive_1": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-11-11"
+        }
+      },
+      "friends": [],
+      "friendRequestsIn": [],
+      "friendRequestsOut": [],
+      "blockedUsers": [],
+      "recentPlayers": [
+        {
+          "userId": "usr_ec640aeb9aff",
+          "username": "Rival",
+          "lastPlayedAt": 1794376074818
+        }
+      ],
+      "createdAt": 1794376074431,
+      "lastSeenAt": 1794376074819
+    },
+    {
+      "id": "usr_ec640aeb9aff",
+      "username": "EcoRival_4cb3fd7f",
+      "email": "eco2_4cb3fd7f@mafiapro.uz",
+      "passwordHash": "711589410b9b669ef69bca9537a39d7d:cb95d5749b995716d3929da9a62b84cc9840c81101102bda2ba9c616783cc6ab5f9b38eafe36c15cda59bebcb2fb71fd5439adac400446a0e36deef2dee161a1",
+      "avatar": "gold",
+      "country": "RU",
+      "role": "USER",
+      "isBanned": false,
+      "isFlagged": false,
+      "warningsCount": 0,
+      "notifications": [],
+      "level": 1,
+      "xp": 395,
+      "weeklyXp": 395,
+      "monthlyXp": 395,
+      "rating": 988,
+      "tournamentPoints": 0,
+      "gold": 340,
+      "diamonds": 5,
+      "totalGames": 1,
+      "wins": 0,
+      "losses": 1,
+      "weeklyWins": 0,
+      "monthlyWins": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "favoriteRole": "mafia",
+      "favoriteMode": "CLASSIC",
+      "rolePlayCounts": {
+        "mafia": 1
+      },
+      "modePlayCounts": {
+        "CLASSIC": 1
+      },
+      "achievements": [
+        "first_blood",
+        "tournament_contender"
+      ],
+      "unlockedTitles": [
+        "novice"
+      ],
+      "ownedCosmetics": [],
+      "equippedCosmetics": {},
+      "subscription": {
+        "tier": "FREE",
+        "status": "NONE",
+        "verified": false
+      },
+      "dailyReward": {
+        "streak": 0,
+        "lastClaimAt": 0,
+        "totalClaims": 0
+      },
+      "missionProgress": {
+        "daily_play_2": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-11-11"
+        },
+        "weekly_play_7": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-W46"
+        },
+        "weekly_tournament": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-W46"
+        }
+      },
+      "friends": [],
+      "friendRequestsIn": [],
+      "friendRequestsOut": [],
+      "blockedUsers": [],
+      "recentPlayers": [
+        {
+          "userId": "usr_27a3472c0041",
+          "username": "EcoTester_4cb3fd7f",
+          "lastPlayedAt": 1794376074818
+        }
+      ],
+      "createdAt": 1794376074620,
+      "lastSeenAt": 1794376074819
+    },
+    {
+      "id": "usr_4224928524f8",
+      "username": "EcoTester_3ba9f0e7",
+      "email": "eco1_3ba9f0e7@mafiapro.uz",
+      "passwordHash": "3e7507fb826d919c8702b321b5c31baa:d442196327b185b4780f78df19c9d82e87312a923ec223ee99e7f1bcae807d4d6ac2ea6fd4b7c4688a85edbe8130b2b39d3d2d3a0a8d495fbf950e0a8dcf40ad",
+      "avatar": "crimson",
+      "country": "UZ",
+      "role": "USER",
+      "isBanned": false,
+      "isFlagged": false,
+      "warningsCount": 0,
+      "notifications": [],
+      "level": 8,
+      "xp": 3400,
+      "weeklyXp": 3400,
+      "monthlyXp": 3400,
+      "rating": 1028,
+      "tournamentPoints": 100,
+      "gold": 2515,
+      "diamonds": 45,
+      "totalGames": 1,
+      "wins": 1,
+      "losses": 0,
+      "weeklyWins": 1,
+      "monthlyWins": 1,
+      "winStreak": 1,
+      "bestWinStreak": 1,
+      "favoriteRole": "sheriff",
+      "favoriteMode": "CLASSIC",
+      "rolePlayCounts": {
+        "sheriff": 1
+      },
+      "modePlayCounts": {
+        "CLASSIC": 1
+      },
+      "achievements": [
+        "first_blood",
+        "first_win",
+        "perfect_victory",
+        "town_hero",
+        "master_detective",
+        "survivor_badge",
+        "level_5",
+        "tournament_champion"
+      ],
+      "unlockedTitles": [
+        "novice",
+        "master_detective",
+        "survivor",
+        "champion"
+      ],
+      "ownedCosmetics": [
+        "av_crimson_don"
+      ],
+      "equippedCosmetics": {
+        "AVATAR": "av_crimson_don"
+      },
+      "subscription": {
+        "tier": "ELITE",
+        "status": "CANCELLED",
+        "provider": "stripe",
+        "verified": true,
+        "expiresAt": 1796969114332
+      },
+      "dailyReward": {
+        "streak": 2,
+        "lastClaimAt": 1780401600000,
+        "totalClaims": 2
+      },
+      "missionProgress": {
+        "daily_play_2": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-11-11"
+        },
+        "weekly_play_7": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-W46"
+        },
+        "daily_win_1": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-11-11"
+        },
+        "weekly_win_4": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-W46"
+        },
+        "daily_survive_1": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-11-11"
+        }
+      },
+      "friends": [],
+      "friendRequestsIn": [],
+      "friendRequestsOut": [],
+      "blockedUsers": [],
+      "recentPlayers": [
+        {
+          "userId": "usr_826360dce59b",
+          "username": "Rival",
+          "lastPlayedAt": 1794377114250
+        }
+      ],
+      "createdAt": 1794377114012,
+      "lastSeenAt": 1794377114252
+    },
+    {
+      "id": "usr_826360dce59b",
+      "username": "EcoRival_3ba9f0e7",
+      "email": "eco2_3ba9f0e7@mafiapro.uz",
+      "passwordHash": "8e3af8e90c93bfbb617630df4830e0c6:9b2ea94eda4492d235c291814d3580b2248ed9e8527957a121b9a6e1d135322e276acde12d1fe0875c7caafc18102d81e22c170392c01712cc8dec202089c40c",
+      "avatar": "gold",
+      "country": "RU",
+      "role": "USER",
+      "isBanned": false,
+      "isFlagged": false,
+      "warningsCount": 0,
+      "notifications": [],
+      "level": 1,
+      "xp": 395,
+      "weeklyXp": 395,
+      "monthlyXp": 395,
+      "rating": 988,
+      "tournamentPoints": 0,
+      "gold": 340,
+      "diamonds": 5,
+      "totalGames": 1,
+      "wins": 0,
+      "losses": 1,
+      "weeklyWins": 0,
+      "monthlyWins": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "favoriteRole": "mafia",
+      "favoriteMode": "CLASSIC",
+      "rolePlayCounts": {
+        "mafia": 1
+      },
+      "modePlayCounts": {
+        "CLASSIC": 1
+      },
+      "achievements": [
+        "first_blood",
+        "tournament_contender"
+      ],
+      "unlockedTitles": [
+        "novice"
+      ],
+      "ownedCosmetics": [],
+      "equippedCosmetics": {},
+      "subscription": {
+        "tier": "FREE",
+        "status": "NONE",
+        "verified": false
+      },
+      "dailyReward": {
+        "streak": 0,
+        "lastClaimAt": 0,
+        "totalClaims": 0
+      },
+      "missionProgress": {
+        "daily_play_2": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-11-11"
+        },
+        "weekly_play_7": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-W46"
+        },
+        "weekly_tournament": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-W46"
+        }
+      },
+      "friends": [],
+      "friendRequestsIn": [],
+      "friendRequestsOut": [],
+      "blockedUsers": [],
+      "recentPlayers": [
+        {
+          "userId": "usr_4224928524f8",
+          "username": "EcoTester_3ba9f0e7",
+          "lastPlayedAt": 1794377114250
+        }
+      ],
+      "createdAt": 1794377114138,
+      "lastSeenAt": 1794377114252
+    },
+    {
+      "id": "usr_709d92eeab35",
+      "username": "EcoTester_61bbba26",
+      "email": "eco1_61bbba26@mafiapro.uz",
+      "passwordHash": "96d70a557adb402c3383d2da0f29ae86:1d20abe356d6482a15b89a0c7fa75ac832377990912b10bf51a8152803189d947b88ab2ba39c52961fb6c5644eb19940ea5445641803e57eaf6018476f6030b6",
+      "avatar": "crimson",
+      "country": "UZ",
+      "role": "USER",
+      "isBanned": false,
+      "isFlagged": false,
+      "warningsCount": 0,
+      "notifications": [],
+      "level": 8,
+      "xp": 3400,
+      "weeklyXp": 3400,
+      "monthlyXp": 3400,
+      "rating": 1028,
+      "tournamentPoints": 100,
+      "gold": 2515,
+      "diamonds": 45,
+      "totalGames": 1,
+      "wins": 1,
+      "losses": 0,
+      "weeklyWins": 1,
+      "monthlyWins": 1,
+      "winStreak": 1,
+      "bestWinStreak": 1,
+      "favoriteRole": "sheriff",
+      "favoriteMode": "CLASSIC",
+      "rolePlayCounts": {
+        "sheriff": 1
+      },
+      "modePlayCounts": {
+        "CLASSIC": 1
+      },
+      "achievements": [
+        "first_blood",
+        "first_win",
+        "perfect_victory",
+        "town_hero",
+        "master_detective",
+        "survivor_badge",
+        "level_5",
+        "tournament_champion"
+      ],
+      "unlockedTitles": [
+        "novice",
+        "master_detective",
+        "survivor",
+        "champion"
+      ],
+      "ownedCosmetics": [
+        "av_crimson_don"
+      ],
+      "equippedCosmetics": {
+        "AVATAR": "av_crimson_don"
+      },
+      "subscription": {
+        "tier": "ELITE",
+        "status": "CANCELLED",
+        "provider": "stripe",
+        "verified": true,
+        "expiresAt": 1796991821137
+      },
+      "dailyReward": {
+        "streak": 2,
+        "lastClaimAt": 1780401600000,
+        "totalClaims": 2
+      },
+      "missionProgress": {
+        "daily_play_2": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-11-11"
+        },
+        "weekly_play_7": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-W46"
+        },
+        "daily_win_1": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-11-11"
+        },
+        "weekly_win_4": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-W46"
+        },
+        "daily_survive_1": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-11-11"
+        }
+      },
+      "friends": [],
+      "friendRequestsIn": [],
+      "friendRequestsOut": [],
+      "blockedUsers": [],
+      "recentPlayers": [
+        {
+          "userId": "usr_98d509ff3f19",
+          "username": "Rival",
+          "lastPlayedAt": 1794399821019
+        }
+      ],
+      "createdAt": 1794399820712,
+      "lastSeenAt": 1794399821020
+    },
+    {
+      "id": "usr_98d509ff3f19",
+      "username": "EcoRival_61bbba26",
+      "email": "eco2_61bbba26@mafiapro.uz",
+      "passwordHash": "f11721051c6c3e1410f083b89acef52b:e50ed72cc7b0817cdb7722e3954856b7fa5baba95fa7ab5d2b1043488d8c8ee2c4860fdef1d9aa74be49215518387388aef4bc6243909b78cdf33cbb381fcbd7",
+      "avatar": "gold",
+      "country": "RU",
+      "role": "USER",
+      "isBanned": false,
+      "isFlagged": false,
+      "warningsCount": 0,
+      "notifications": [],
+      "level": 1,
+      "xp": 395,
+      "weeklyXp": 395,
+      "monthlyXp": 395,
+      "rating": 988,
+      "tournamentPoints": 0,
+      "gold": 340,
+      "diamonds": 5,
+      "totalGames": 1,
+      "wins": 0,
+      "losses": 1,
+      "weeklyWins": 0,
+      "monthlyWins": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "favoriteRole": "mafia",
+      "favoriteMode": "CLASSIC",
+      "rolePlayCounts": {
+        "mafia": 1
+      },
+      "modePlayCounts": {
+        "CLASSIC": 1
+      },
+      "achievements": [
+        "first_blood",
+        "tournament_contender"
+      ],
+      "unlockedTitles": [
+        "novice"
+      ],
+      "ownedCosmetics": [],
+      "equippedCosmetics": {},
+      "subscription": {
+        "tier": "FREE",
+        "status": "NONE",
+        "verified": false
+      },
+      "dailyReward": {
+        "streak": 0,
+        "lastClaimAt": 0,
+        "totalClaims": 0
+      },
+      "missionProgress": {
+        "daily_play_2": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-11-11"
+        },
+        "weekly_play_7": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-W46"
+        },
+        "weekly_tournament": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-W46"
+        }
+      },
+      "friends": [],
+      "friendRequestsIn": [],
+      "friendRequestsOut": [],
+      "blockedUsers": [],
+      "recentPlayers": [
+        {
+          "userId": "usr_709d92eeab35",
+          "username": "EcoTester_61bbba26",
+          "lastPlayedAt": 1794399821019
+        }
+      ],
+      "createdAt": 1794399820841,
+      "lastSeenAt": 1794399821020
+    },
+    {
+      "id": "usr_cc55384e1777",
+      "username": "EcoTester_2fa3d52a",
+      "email": "eco1_2fa3d52a@mafiapro.uz",
+      "passwordHash": "8789423c472b8dd3669f989dfb50cbc6:1dda00ae487afb54dd718870117f7214c315fd3797059779608e8fad0a07b70b7f574c08243ebb003fd0ad3530eae934e6e0d6d405ea02f814c6d58cafe7e590",
+      "avatar": "crimson",
+      "country": "UZ",
+      "role": "USER",
+      "isBanned": false,
+      "isFlagged": false,
+      "warningsCount": 0,
+      "notifications": [],
+      "level": 8,
+      "xp": 3400,
+      "weeklyXp": 3400,
+      "monthlyXp": 3400,
+      "rating": 1028,
+      "tournamentPoints": 100,
+      "gold": 2515,
+      "diamonds": 45,
+      "totalGames": 1,
+      "wins": 1,
+      "losses": 0,
+      "weeklyWins": 1,
+      "monthlyWins": 1,
+      "winStreak": 1,
+      "bestWinStreak": 1,
+      "favoriteRole": "sheriff",
+      "favoriteMode": "CLASSIC",
+      "rolePlayCounts": {
+        "sheriff": 1
+      },
+      "modePlayCounts": {
+        "CLASSIC": 1
+      },
+      "achievements": [
+        "first_blood",
+        "first_win",
+        "perfect_victory",
+        "town_hero",
+        "master_detective",
+        "survivor_badge",
+        "level_5",
+        "tournament_champion"
+      ],
+      "unlockedTitles": [
+        "novice",
+        "master_detective",
+        "survivor",
+        "champion"
+      ],
+      "ownedCosmetics": [
+        "av_crimson_don"
+      ],
+      "equippedCosmetics": {
+        "AVATAR": "av_crimson_don"
+      },
+      "subscription": {
+        "tier": "ELITE",
+        "status": "CANCELLED",
+        "provider": "stripe",
+        "verified": true,
+        "expiresAt": 1796994213871
+      },
+      "dailyReward": {
+        "streak": 2,
+        "lastClaimAt": 1780401600000,
+        "totalClaims": 2
+      },
+      "missionProgress": {
+        "daily_play_2": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-11-11"
+        },
+        "weekly_play_7": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-W46"
+        },
+        "daily_win_1": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-11-11"
+        },
+        "weekly_win_4": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-W46"
+        },
+        "daily_survive_1": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-11-11"
+        }
+      },
+      "friends": [],
+      "friendRequestsIn": [],
+      "friendRequestsOut": [],
+      "blockedUsers": [],
+      "recentPlayers": [
+        {
+          "userId": "usr_901d1d1969b6",
+          "username": "Rival",
+          "lastPlayedAt": 1794402213817
+        }
+      ],
+      "createdAt": 1794402213517,
+      "lastSeenAt": 1794402213818
+    },
+    {
+      "id": "usr_901d1d1969b6",
+      "username": "EcoRival_2fa3d52a",
+      "email": "eco2_2fa3d52a@mafiapro.uz",
+      "passwordHash": "26d248e6283a3bbd85ad6acd94eb4295:f63c8c5086e32f4361a3996600045beda87a3d6fc4715e675fa330ea18021fd6398b8cd82fc9a3ab95a76082019140f0009bc53b296b2d570d5aef23c6755c36",
+      "avatar": "gold",
+      "country": "RU",
+      "role": "USER",
+      "isBanned": false,
+      "isFlagged": false,
+      "warningsCount": 0,
+      "notifications": [],
+      "level": 1,
+      "xp": 395,
+      "weeklyXp": 395,
+      "monthlyXp": 395,
+      "rating": 988,
+      "tournamentPoints": 0,
+      "gold": 340,
+      "diamonds": 5,
+      "totalGames": 1,
+      "wins": 0,
+      "losses": 1,
+      "weeklyWins": 0,
+      "monthlyWins": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "favoriteRole": "mafia",
+      "favoriteMode": "CLASSIC",
+      "rolePlayCounts": {
+        "mafia": 1
+      },
+      "modePlayCounts": {
+        "CLASSIC": 1
+      },
+      "achievements": [
+        "first_blood",
+        "tournament_contender"
+      ],
+      "unlockedTitles": [
+        "novice"
+      ],
+      "ownedCosmetics": [],
+      "equippedCosmetics": {},
+      "subscription": {
+        "tier": "FREE",
+        "status": "NONE",
+        "verified": false
+      },
+      "dailyReward": {
+        "streak": 0,
+        "lastClaimAt": 0,
+        "totalClaims": 0
+      },
+      "missionProgress": {
+        "daily_play_2": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-11-11"
+        },
+        "weekly_play_7": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-W46"
+        },
+        "weekly_tournament": {
+          "progress": 1,
+          "claimed": false,
+          "periodKey": "2026-W46"
+        }
+      },
+      "friends": [],
+      "friendRequestsIn": [],
+      "friendRequestsOut": [],
+      "blockedUsers": [],
+      "recentPlayers": [
+        {
+          "userId": "usr_cc55384e1777",
+          "username": "EcoTester_2fa3d52a",
+          "lastPlayedAt": 1794402213817
+        }
+      ],
+      "createdAt": 1794402213701,
+      "lastSeenAt": 1794402213818
+    }
+  ],
+  "history": [
+    {
+      "id": "match_98ff41d8",
+      "roomCode": "TST001",
+      "mode": "CLASSIC",
+      "winner": "TOWN",
+      "rounds": 3,
+      "durationSec": 180,
+      "playerCount": 6,
+      "endedAt": 1794402213817,
+      "players": [
+        {
+          "userId": "usr_cc55384e1777",
+          "username": "EcoTester_2fa3d52a",
+          "roleId": "sheriff",
+          "team": "TOWN",
+          "survived": true,
+          "won": true
+        },
+        {
+          "userId": "usr_901d1d1969b6",
+          "username": "Rival",
+          "roleId": "mafia",
+          "team": "MAFIA",
+          "survived": false,
+          "won": false
+        }
+      ]
+    },
+    {
+      "id": "gm_mwc4qwby",
+      "roomCode": "2UVKGY",
+      "mode": "CLASSIC",
+      "playerCount": 5,
+      "winner": "MAFIA",
+      "rounds": 2,
+      "durationSec": 10,
+      "endedAt": 1794402212398,
+      "players": [
+        {
+          "userId": "gst_player_0",
+          "username": "Agent_0",
+          "roleId": "don",
+          "team": "MAFIA",
+          "won": true,
+          "survived": true
+        },
+        {
+          "userId": "gst_player_1",
+          "username": "Agent_1",
+          "roleId": "sheriff",
+          "team": "TOWN",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "gst_player_2",
+          "username": "Agent_2",
+          "roleId": "doctor",
+          "team": "TOWN",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "gst_player_3",
+          "username": "Agent_3",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "gst_player_4",
+          "username": "Agent_4",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": false,
+          "survived": true
+        }
+      ]
+    },
+    {
+      "id": "gm_mwc3bus6",
+      "roomCode": "G69PD6",
+      "mode": "CLASSIC",
+      "playerCount": 5,
+      "winner": "MAFIA",
+      "rounds": 2,
+      "durationSec": 10,
+      "endedAt": 1794399830934,
+      "players": [
+        {
+          "userId": "gst_player_0",
+          "username": "Agent_0",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "gst_player_1",
+          "username": "Agent_1",
+          "roleId": "doctor",
+          "team": "TOWN",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "gst_player_2",
+          "username": "Agent_2",
+          "roleId": "don",
+          "team": "MAFIA",
+          "won": true,
+          "survived": true
+        },
+        {
+          "userId": "gst_player_3",
+          "username": "Agent_3",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "gst_player_4",
+          "username": "Agent_4",
+          "roleId": "sheriff",
+          "team": "TOWN",
+          "won": false,
+          "survived": true
+        }
+      ]
+    },
+    {
+      "id": "match_d6045f02",
+      "roomCode": "TST001",
+      "mode": "CLASSIC",
+      "winner": "TOWN",
+      "rounds": 3,
+      "durationSec": 180,
+      "playerCount": 6,
+      "endedAt": 1794399821019,
+      "players": [
+        {
+          "userId": "usr_709d92eeab35",
+          "username": "EcoTester_61bbba26",
+          "roleId": "sheriff",
+          "team": "TOWN",
+          "survived": true,
+          "won": true
+        },
+        {
+          "userId": "usr_98d509ff3f19",
+          "username": "Rival",
+          "roleId": "mafia",
+          "team": "MAFIA",
+          "survived": false,
+          "won": false
+        }
+      ]
+    },
+    {
+      "id": "match_0c8b6d48",
+      "roomCode": "TST001",
+      "mode": "CLASSIC",
+      "winner": "TOWN",
+      "rounds": 3,
+      "durationSec": 180,
+      "playerCount": 6,
+      "endedAt": 1794377114250,
+      "players": [
+        {
+          "userId": "usr_4224928524f8",
+          "username": "EcoTester_3ba9f0e7",
+          "roleId": "sheriff",
+          "team": "TOWN",
+          "survived": true,
+          "won": true
+        },
+        {
+          "userId": "usr_826360dce59b",
+          "username": "Rival",
+          "roleId": "mafia",
+          "team": "MAFIA",
+          "survived": false,
+          "won": false
+        }
+      ]
+    },
+    {
+      "id": "gm_mwbpsxh9",
+      "roomCode": "ZYCWRD",
+      "mode": "CLASSIC",
+      "playerCount": 5,
+      "winner": "MAFIA",
+      "rounds": 2,
+      "durationSec": 10,
+      "endedAt": 1794377112957,
+      "players": [
+        {
+          "userId": "gst_player_0",
+          "username": "Agent_0",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "gst_player_1",
+          "username": "Agent_1",
+          "roleId": "don",
+          "team": "MAFIA",
+          "won": true,
+          "survived": true
+        },
+        {
+          "userId": "gst_player_2",
+          "username": "Agent_2",
+          "roleId": "sheriff",
+          "team": "TOWN",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "gst_player_3",
+          "username": "Agent_3",
+          "roleId": "doctor",
+          "team": "TOWN",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "gst_player_4",
+          "username": "Agent_4",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": false,
+          "survived": true
+        }
+      ]
+    },
+    {
+      "id": "gm_mwbp6tln",
+      "roomCode": "VJN8EX",
+      "mode": "CLASSIC",
+      "playerCount": 5,
+      "winner": "MAFIA",
+      "rounds": 2,
+      "durationSec": 10,
+      "endedAt": 1794376081499,
+      "players": [
+        {
+          "userId": "gst_player_0",
+          "username": "Agent_0",
+          "roleId": "don",
+          "team": "MAFIA",
+          "won": true,
+          "survived": true
+        },
+        {
+          "userId": "gst_player_1",
+          "username": "Agent_1",
+          "roleId": "sheriff",
+          "team": "TOWN",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "gst_player_2",
+          "username": "Agent_2",
+          "roleId": "doctor",
+          "team": "TOWN",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "gst_player_3",
+          "username": "Agent_3",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "gst_player_4",
+          "username": "Agent_4",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": false,
+          "survived": true
+        }
+      ]
+    },
+    {
+      "id": "match_11a248f3",
+      "roomCode": "TST001",
+      "mode": "CLASSIC",
+      "winner": "TOWN",
+      "rounds": 3,
+      "durationSec": 180,
+      "playerCount": 6,
+      "endedAt": 1794376074818,
+      "players": [
+        {
+          "userId": "usr_27a3472c0041",
+          "username": "EcoTester_4cb3fd7f",
+          "roleId": "sheriff",
+          "team": "TOWN",
+          "survived": true,
+          "won": true
+        },
+        {
+          "userId": "usr_ec640aeb9aff",
+          "username": "Rival",
+          "roleId": "mafia",
+          "team": "MAFIA",
+          "survived": false,
+          "won": false
+        }
+      ]
+    },
+    {
+      "id": "gm_mwbp67tg",
+      "roomCode": "C4L4PQ",
+      "mode": "CLASSIC",
+      "playerCount": 5,
+      "winner": "MAFIA",
+      "rounds": 2,
+      "durationSec": 10,
+      "endedAt": 1794376053268,
+      "players": [
+        {
+          "userId": "gst_player_0",
+          "username": "Agent_0",
+          "roleId": "doctor",
+          "team": "TOWN",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "gst_player_1",
+          "username": "Agent_1",
+          "roleId": "don",
+          "team": "MAFIA",
+          "won": true,
+          "survived": true
+        },
+        {
+          "userId": "gst_player_2",
+          "username": "Agent_2",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "gst_player_3",
+          "username": "Agent_3",
+          "roleId": "sheriff",
+          "team": "TOWN",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "gst_player_4",
+          "username": "Agent_4",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": false,
+          "survived": true
+        }
+      ]
+    },
+    {
+      "id": "match_9fd9865e",
+      "roomCode": "TST001",
+      "mode": "CLASSIC",
+      "winner": "TOWN",
+      "rounds": 3,
+      "durationSec": 180,
+      "playerCount": 6,
+      "endedAt": 1794376046336,
+      "players": [
+        {
+          "userId": "usr_d48bacc064be",
+          "username": "EcoTester_12d9dce4",
+          "roleId": "sheriff",
+          "team": "TOWN",
+          "survived": true,
+          "won": true
+        },
+        {
+          "userId": "usr_ff512f8fbc93",
+          "username": "Rival",
+          "roleId": "mafia",
+          "team": "MAFIA",
+          "survived": false,
+          "won": false
+        }
+      ]
+    },
+    {
+      "id": "gm_mwbp5gkv",
+      "roomCode": "3L4WZ5",
+      "mode": "CLASSIC",
+      "playerCount": 5,
+      "winner": "MAFIA",
+      "rounds": 2,
+      "durationSec": 10,
+      "endedAt": 1794376017968,
+      "players": [
+        {
+          "userId": "gst_player_0",
+          "username": "Agent_0",
+          "roleId": "don",
+          "team": "MAFIA",
+          "won": true,
+          "survived": true
+        },
+        {
+          "userId": "gst_player_1",
+          "username": "Agent_1",
+          "roleId": "sheriff",
+          "team": "TOWN",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "gst_player_2",
+          "username": "Agent_2",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "gst_player_3",
+          "username": "Agent_3",
+          "roleId": "doctor",
+          "team": "TOWN",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "gst_player_4",
+          "username": "Agent_4",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": false,
+          "survived": true
+        }
+      ]
+    },
+    {
+      "id": "gm_mwboe8eg",
+      "roomCode": "6Y9CU7",
+      "mode": "CLASSIC",
+      "playerCount": 5,
+      "winner": "MAFIA",
+      "rounds": 2,
+      "durationSec": 10,
+      "endedAt": 1794374747656,
+      "players": [
+        {
+          "userId": "gst_player_0",
+          "username": "Agent_0",
+          "roleId": "don",
+          "team": "MAFIA",
+          "won": true,
+          "survived": true
+        },
+        {
+          "userId": "gst_player_1",
+          "username": "Agent_1",
+          "roleId": "sheriff",
+          "team": "TOWN",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "gst_player_2",
+          "username": "Agent_2",
+          "roleId": "doctor",
+          "team": "TOWN",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "gst_player_3",
+          "username": "Agent_3",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "gst_player_4",
+          "username": "Agent_4",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": false,
+          "survived": true
+        }
+      ]
+    },
+    {
+      "id": "gm_mwbnvgi6",
+      "roomCode": "33ER3W",
+      "mode": "CLASSIC",
+      "playerCount": 6,
+      "winner": "TOWN",
+      "rounds": 1,
+      "durationSec": 87,
+      "endedAt": 1794373871694,
+      "players": [
+        {
+          "userId": "usr_82a68f37c864",
+          "username": "Xisomiddin",
+          "roleId": "don",
+          "team": "MAFIA",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "bot_dnkdji",
+          "username": "Malika (Bot)",
+          "roleId": "sheriff",
+          "team": "TOWN",
+          "won": true,
+          "survived": true
+        },
+        {
+          "userId": "bot_duythf",
+          "username": "Sardor (Bot)",
+          "roleId": "doctor",
+          "team": "TOWN",
+          "won": true,
+          "survived": false
+        },
+        {
+          "userId": "bot_ef3k26",
+          "username": "Kamila (Bot)",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": true,
+          "survived": true
+        },
+        {
+          "userId": "bot_4ohtit",
+          "username": "Jasur (Bot)",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": true,
+          "survived": true
+        },
+        {
+          "userId": "bot_8rzhs3",
+          "username": "Dilnoza (Bot)",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": true,
+          "survived": true
+        }
+      ]
+    },
+    {
+      "id": "gm_mwbnq83b",
+      "roomCode": "SSHJDD",
+      "mode": "CLASSIC",
+      "playerCount": 6,
+      "winner": "TOWN",
+      "rounds": 1,
+      "durationSec": 80,
+      "endedAt": 1794373627511,
+      "players": [
+        {
+          "userId": "usr_82a68f37c864",
+          "username": "Xisomiddin",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": true,
+          "survived": true
+        },
+        {
+          "userId": "bot_s8daev",
+          "username": "Malika (Bot)",
+          "roleId": "don",
+          "team": "MAFIA",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "bot_nyt9an",
+          "username": "Sardor (Bot)",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": true,
+          "survived": false
+        },
+        {
+          "userId": "bot_b0ig10",
+          "username": "Kamila (Bot)",
+          "roleId": "sheriff",
+          "team": "TOWN",
+          "won": true,
+          "survived": true
+        },
+        {
+          "userId": "bot_nvj2gj",
+          "username": "Jasur (Bot)",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": true,
+          "survived": true
+        },
+        {
+          "userId": "bot_6ljve6",
+          "username": "Dilnoza (Bot)",
+          "roleId": "doctor",
+          "team": "TOWN",
+          "won": true,
+          "survived": true
+        }
+      ]
+    },
+    {
+      "id": "gm_mwbng0dq",
+      "roomCode": "KMXA4C",
+      "mode": "CLASSIC",
+      "playerCount": 6,
+      "winner": "TOWN",
+      "rounds": 1,
+      "durationSec": 59,
+      "endedAt": 1794373150958,
+      "players": [
+        {
+          "userId": "usr_82a68f37c864",
+          "username": "Xisomiddin",
+          "roleId": "don",
+          "team": "MAFIA",
+          "won": false,
+          "survived": false
+        },
+        {
+          "userId": "bot_p3ydff",
+          "username": "Malika (Bot)",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": true,
+          "survived": true
+        },
+        {
+          "userId": "bot_dpxa4w",
+          "username": "Sardor (Bot)",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": true,
+          "survived": true
+        },
+        {
+          "userId": "bot_o6e8dj",
+          "username": "Kamila (Bot)",
+          "roleId": "doctor",
+          "team": "TOWN",
+          "won": true,
+          "survived": false
+        },
+        {
+          "userId": "bot_h0uwrt",
+          "username": "Jasur (Bot)",
+          "roleId": "sheriff",
+          "team": "TOWN",
+          "won": true,
+          "survived": true
+        },
+        {
+          "userId": "bot_lztsaq",
+          "username": "Dilnoza (Bot)",
+          "roleId": "citizen",
+          "team": "TOWN",
+          "won": true,
+          "survived": true
+        }
+      ]
+    }
+  ],
+  "reports": [],
+  "transactions": [
+    {
+      "id": "tx_fc96653191",
+      "userId": "usr_cc55384e1777",
+      "username": "EcoTester_2fa3d52a",
+      "currency": "DIAMONDS",
+      "amount": 30,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: tournament_champion",
+      "createdAt": 1794402213877
+    },
+    {
+      "id": "tx_39858065e9",
+      "userId": "usr_cc55384e1777",
+      "username": "EcoTester_2fa3d52a",
+      "currency": "GOLD",
+      "amount": 1000,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: tournament_champion",
+      "createdAt": 1794402213877
+    },
+    {
+      "id": "tx_766caa260c",
+      "userId": "usr_cc55384e1777",
+      "username": "EcoTester_2fa3d52a",
+      "currency": "DIAMONDS",
+      "amount": 10,
+      "type": "TOURNAMENT_PRIZE",
+      "description": "1st Place: Test Cup",
+      "createdAt": 1794402213877
+    },
+    {
+      "id": "tx_619ed343fd",
+      "userId": "usr_cc55384e1777",
+      "username": "EcoTester_2fa3d52a",
+      "currency": "GOLD",
+      "amount": 500,
+      "type": "TOURNAMENT_PRIZE",
+      "description": "1st Place: Test Cup",
+      "createdAt": 1794402213877
+    },
+    {
+      "id": "tx_2612fa2c9c",
+      "userId": "usr_901d1d1969b6",
+      "username": "EcoRival_2fa3d52a",
+      "currency": "GOLD",
+      "amount": 120,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: tournament_contender",
+      "createdAt": 1794402213875
+    },
+    {
+      "id": "tx_dc6d6ea03c",
+      "userId": "usr_cc55384e1777",
+      "username": "EcoTester_2fa3d52a",
+      "currency": "GOLD",
+      "amount": -150,
+      "type": "PURCHASE",
+      "description": "Purchased av_crimson_don",
+      "createdAt": 1794402213823
+    },
+    {
+      "id": "tx_0c1ccb607f",
+      "userId": "usr_cc55384e1777",
+      "username": "EcoTester_2fa3d52a",
+      "currency": "GOLD",
+      "amount": 80,
+      "type": "DAILY_REWARD",
+      "description": "Day 2 Login Reward",
+      "createdAt": 1794402213822
+    },
+    {
+      "id": "tx_cfa18b7b8b",
+      "userId": "usr_cc55384e1777",
+      "username": "EcoTester_2fa3d52a",
+      "currency": "GOLD",
+      "amount": 50,
+      "type": "DAILY_REWARD",
+      "description": "Day 1 Login Reward",
+      "createdAt": 1794402213820
+    },
+    {
+      "id": "tx_b042157170",
+      "userId": "usr_901d1d1969b6",
+      "username": "EcoRival_2fa3d52a",
+      "currency": "GOLD",
+      "amount": 50,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: first_blood",
+      "createdAt": 1794402213818
+    },
+    {
+      "id": "tx_77614ea33e",
+      "userId": "usr_901d1d1969b6",
+      "username": "EcoRival_2fa3d52a",
+      "currency": "GOLD",
+      "amount": 20,
+      "type": "GAME_REWARD",
+      "description": "Match TST001 (CLASSIC)",
+      "createdAt": 1794402213818
+    },
+    {
+      "id": "tx_936530a343",
+      "userId": "usr_cc55384e1777",
+      "username": "EcoTester_2fa3d52a",
+      "currency": "GOLD",
+      "amount": 100,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: level_5",
+      "createdAt": 1794402213818
+    },
+    {
+      "id": "tx_73984e1178",
+      "userId": "usr_cc55384e1777",
+      "username": "EcoTester_2fa3d52a",
+      "currency": "GOLD",
+      "amount": 100,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: survivor_badge",
+      "createdAt": 1794402213818
+    },
+    {
+      "id": "tx_0fbbed5e45",
+      "userId": "usr_cc55384e1777",
+      "username": "EcoTester_2fa3d52a",
+      "currency": "GOLD",
+      "amount": 180,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: master_detective",
+      "createdAt": 1794402213818
+    },
+    {
+      "id": "tx_38288ea440",
+      "userId": "usr_cc55384e1777",
+      "username": "EcoTester_2fa3d52a",
+      "currency": "GOLD",
+      "amount": 100,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: town_hero",
+      "createdAt": 1794402213818
+    },
+    {
+      "id": "tx_23df6b315f",
+      "userId": "usr_cc55384e1777",
+      "username": "EcoTester_2fa3d52a",
+      "currency": "GOLD",
+      "amount": 200,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: perfect_victory",
+      "createdAt": 1794402213818
+    },
+    {
+      "id": "tx_4af844da4f",
+      "userId": "usr_cc55384e1777",
+      "username": "EcoTester_2fa3d52a",
+      "currency": "GOLD",
+      "amount": 75,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: first_win",
+      "createdAt": 1794402213818
+    },
+    {
+      "id": "tx_16d7adcc4e",
+      "userId": "usr_cc55384e1777",
+      "username": "EcoTester_2fa3d52a",
+      "currency": "GOLD",
+      "amount": 50,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: first_blood",
+      "createdAt": 1794402213818
+    },
+    {
+      "id": "tx_ded527f656",
+      "userId": "usr_cc55384e1777",
+      "username": "EcoTester_2fa3d52a",
+      "currency": "GOLD",
+      "amount": 80,
+      "type": "GAME_REWARD",
+      "description": "Match TST001 (CLASSIC)",
+      "createdAt": 1794402213817
+    },
+    {
+      "id": "tx_c76f858155",
+      "userId": "usr_709d92eeab35",
+      "username": "EcoTester_61bbba26",
+      "currency": "DIAMONDS",
+      "amount": 30,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: tournament_champion",
+      "createdAt": 1794399821144
+    },
+    {
+      "id": "tx_edc6c6b245",
+      "userId": "usr_709d92eeab35",
+      "username": "EcoTester_61bbba26",
+      "currency": "GOLD",
+      "amount": 1000,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: tournament_champion",
+      "createdAt": 1794399821144
+    },
+    {
+      "id": "tx_2ee9223ef2",
+      "userId": "usr_709d92eeab35",
+      "username": "EcoTester_61bbba26",
+      "currency": "DIAMONDS",
+      "amount": 10,
+      "type": "TOURNAMENT_PRIZE",
+      "description": "1st Place: Test Cup",
+      "createdAt": 1794399821144
+    },
+    {
+      "id": "tx_70e0ac8a18",
+      "userId": "usr_709d92eeab35",
+      "username": "EcoTester_61bbba26",
+      "currency": "GOLD",
+      "amount": 500,
+      "type": "TOURNAMENT_PRIZE",
+      "description": "1st Place: Test Cup",
+      "createdAt": 1794399821144
+    },
+    {
+      "id": "tx_064d737fd2",
+      "userId": "usr_98d509ff3f19",
+      "username": "EcoRival_61bbba26",
+      "currency": "GOLD",
+      "amount": 120,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: tournament_contender",
+      "createdAt": 1794399821140
+    },
+    {
+      "id": "tx_acc90faaf0",
+      "userId": "usr_709d92eeab35",
+      "username": "EcoTester_61bbba26",
+      "currency": "GOLD",
+      "amount": -150,
+      "type": "PURCHASE",
+      "description": "Purchased av_crimson_don",
+      "createdAt": 1794399821027
+    },
+    {
+      "id": "tx_1713e436a9",
+      "userId": "usr_709d92eeab35",
+      "username": "EcoTester_61bbba26",
+      "currency": "GOLD",
+      "amount": 80,
+      "type": "DAILY_REWARD",
+      "description": "Day 2 Login Reward",
+      "createdAt": 1794399821025
+    },
+    {
+      "id": "tx_93bc52e9c5",
+      "userId": "usr_709d92eeab35",
+      "username": "EcoTester_61bbba26",
+      "currency": "GOLD",
+      "amount": 50,
+      "type": "DAILY_REWARD",
+      "description": "Day 1 Login Reward",
+      "createdAt": 1794399821023
+    },
+    {
+      "id": "tx_dc6e5198d5",
+      "userId": "usr_98d509ff3f19",
+      "username": "EcoRival_61bbba26",
+      "currency": "GOLD",
+      "amount": 50,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: first_blood",
+      "createdAt": 1794399821020
+    },
+    {
+      "id": "tx_da54017089",
+      "userId": "usr_98d509ff3f19",
+      "username": "EcoRival_61bbba26",
+      "currency": "GOLD",
+      "amount": 20,
+      "type": "GAME_REWARD",
+      "description": "Match TST001 (CLASSIC)",
+      "createdAt": 1794399821020
+    },
+    {
+      "id": "tx_ade064a7db",
+      "userId": "usr_709d92eeab35",
+      "username": "EcoTester_61bbba26",
+      "currency": "GOLD",
+      "amount": 100,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: level_5",
+      "createdAt": 1794399821020
+    },
+    {
+      "id": "tx_13a83f2e8e",
+      "userId": "usr_709d92eeab35",
+      "username": "EcoTester_61bbba26",
+      "currency": "GOLD",
+      "amount": 100,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: survivor_badge",
+      "createdAt": 1794399821020
+    },
+    {
+      "id": "tx_cd467a64fa",
+      "userId": "usr_709d92eeab35",
+      "username": "EcoTester_61bbba26",
+      "currency": "GOLD",
+      "amount": 180,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: master_detective",
+      "createdAt": 1794399821020
+    },
+    {
+      "id": "tx_44db463ab5",
+      "userId": "usr_709d92eeab35",
+      "username": "EcoTester_61bbba26",
+      "currency": "GOLD",
+      "amount": 100,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: town_hero",
+      "createdAt": 1794399821020
+    },
+    {
+      "id": "tx_19dbe1c3f6",
+      "userId": "usr_709d92eeab35",
+      "username": "EcoTester_61bbba26",
+      "currency": "GOLD",
+      "amount": 200,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: perfect_victory",
+      "createdAt": 1794399821020
+    },
+    {
+      "id": "tx_68b82b205d",
+      "userId": "usr_709d92eeab35",
+      "username": "EcoTester_61bbba26",
+      "currency": "GOLD",
+      "amount": 75,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: first_win",
+      "createdAt": 1794399821020
+    },
+    {
+      "id": "tx_a1069c556c",
+      "userId": "usr_709d92eeab35",
+      "username": "EcoTester_61bbba26",
+      "currency": "GOLD",
+      "amount": 50,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: first_blood",
+      "createdAt": 1794399821020
+    },
+    {
+      "id": "tx_83e00ac80e",
+      "userId": "usr_709d92eeab35",
+      "username": "EcoTester_61bbba26",
+      "currency": "GOLD",
+      "amount": 80,
+      "type": "GAME_REWARD",
+      "description": "Match TST001 (CLASSIC)",
+      "createdAt": 1794399821019
+    },
+    {
+      "id": "tx_fbdc5b1d39",
+      "userId": "usr_4224928524f8",
+      "username": "EcoTester_3ba9f0e7",
+      "currency": "DIAMONDS",
+      "amount": 30,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: tournament_champion",
+      "createdAt": 1794377114338
+    },
+    {
+      "id": "tx_58581a46ad",
+      "userId": "usr_4224928524f8",
+      "username": "EcoTester_3ba9f0e7",
+      "currency": "GOLD",
+      "amount": 1000,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: tournament_champion",
+      "createdAt": 1794377114338
+    },
+    {
+      "id": "tx_cad475085c",
+      "userId": "usr_4224928524f8",
+      "username": "EcoTester_3ba9f0e7",
+      "currency": "DIAMONDS",
+      "amount": 10,
+      "type": "TOURNAMENT_PRIZE",
+      "description": "1st Place: Test Cup",
+      "createdAt": 1794377114338
+    },
+    {
+      "id": "tx_5ea8781650",
+      "userId": "usr_4224928524f8",
+      "username": "EcoTester_3ba9f0e7",
+      "currency": "GOLD",
+      "amount": 500,
+      "type": "TOURNAMENT_PRIZE",
+      "description": "1st Place: Test Cup",
+      "createdAt": 1794377114338
+    },
+    {
+      "id": "tx_48a01a5e52",
+      "userId": "usr_826360dce59b",
+      "username": "EcoRival_3ba9f0e7",
+      "currency": "GOLD",
+      "amount": 120,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: tournament_contender",
+      "createdAt": 1794377114336
+    },
+    {
+      "id": "tx_1b486ef4e3",
+      "userId": "usr_4224928524f8",
+      "username": "EcoTester_3ba9f0e7",
+      "currency": "GOLD",
+      "amount": -150,
+      "type": "PURCHASE",
+      "description": "Purchased av_crimson_don",
+      "createdAt": 1794377114261
+    },
+    {
+      "id": "tx_d44357de0f",
+      "userId": "usr_4224928524f8",
+      "username": "EcoTester_3ba9f0e7",
+      "currency": "GOLD",
+      "amount": 80,
+      "type": "DAILY_REWARD",
+      "description": "Day 2 Login Reward",
+      "createdAt": 1794377114258
+    },
+    {
+      "id": "tx_f9f80ada18",
+      "userId": "usr_4224928524f8",
+      "username": "EcoTester_3ba9f0e7",
+      "currency": "GOLD",
+      "amount": 50,
+      "type": "DAILY_REWARD",
+      "description": "Day 1 Login Reward",
+      "createdAt": 1794377114256
+    },
+    {
+      "id": "tx_706cb1a0ca",
+      "userId": "usr_826360dce59b",
+      "username": "EcoRival_3ba9f0e7",
+      "currency": "GOLD",
+      "amount": 50,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: first_blood",
+      "createdAt": 1794377114252
+    },
+    {
+      "id": "tx_ad20414444",
+      "userId": "usr_826360dce59b",
+      "username": "EcoRival_3ba9f0e7",
+      "currency": "GOLD",
+      "amount": 20,
+      "type": "GAME_REWARD",
+      "description": "Match TST001 (CLASSIC)",
+      "createdAt": 1794377114252
+    },
+    {
+      "id": "tx_f2313759c6",
+      "userId": "usr_4224928524f8",
+      "username": "EcoTester_3ba9f0e7",
+      "currency": "GOLD",
+      "amount": 100,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: level_5",
+      "createdAt": 1794377114252
+    },
+    {
+      "id": "tx_8b8943ae4e",
+      "userId": "usr_4224928524f8",
+      "username": "EcoTester_3ba9f0e7",
+      "currency": "GOLD",
+      "amount": 100,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: survivor_badge",
+      "createdAt": 1794377114252
+    },
+    {
+      "id": "tx_a7d70c10c8",
+      "userId": "usr_4224928524f8",
+      "username": "EcoTester_3ba9f0e7",
+      "currency": "GOLD",
+      "amount": 180,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: master_detective",
+      "createdAt": 1794377114252
+    },
+    {
+      "id": "tx_e78a243af2",
+      "userId": "usr_4224928524f8",
+      "username": "EcoTester_3ba9f0e7",
+      "currency": "GOLD",
+      "amount": 100,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: town_hero",
+      "createdAt": 1794377114252
+    },
+    {
+      "id": "tx_aa532a428e",
+      "userId": "usr_4224928524f8",
+      "username": "EcoTester_3ba9f0e7",
+      "currency": "GOLD",
+      "amount": 200,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: perfect_victory",
+      "createdAt": 1794377114252
+    },
+    {
+      "id": "tx_7e7072f15e",
+      "userId": "usr_4224928524f8",
+      "username": "EcoTester_3ba9f0e7",
+      "currency": "GOLD",
+      "amount": 75,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: first_win",
+      "createdAt": 1794377114252
+    },
+    {
+      "id": "tx_1f6af8c9d6",
+      "userId": "usr_4224928524f8",
+      "username": "EcoTester_3ba9f0e7",
+      "currency": "GOLD",
+      "amount": 50,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: first_blood",
+      "createdAt": 1794377114252
+    },
+    {
+      "id": "tx_d946a5e418",
+      "userId": "usr_4224928524f8",
+      "username": "EcoTester_3ba9f0e7",
+      "currency": "GOLD",
+      "amount": 80,
+      "type": "GAME_REWARD",
+      "description": "Match TST001 (CLASSIC)",
+      "createdAt": 1794377114251
+    },
+    {
+      "id": "tx_e9b584eca7",
+      "userId": "usr_27a3472c0041",
+      "username": "EcoTester_4cb3fd7f",
+      "currency": "DIAMONDS",
+      "amount": 30,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: tournament_champion",
+      "createdAt": 1794376074932
+    },
+    {
+      "id": "tx_3ba749e0e7",
+      "userId": "usr_27a3472c0041",
+      "username": "EcoTester_4cb3fd7f",
+      "currency": "GOLD",
+      "amount": 1000,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: tournament_champion",
+      "createdAt": 1794376074932
+    },
+    {
+      "id": "tx_e0fce8e2e1",
+      "userId": "usr_27a3472c0041",
+      "username": "EcoTester_4cb3fd7f",
+      "currency": "DIAMONDS",
+      "amount": 10,
+      "type": "TOURNAMENT_PRIZE",
+      "description": "1st Place: Test Cup",
+      "createdAt": 1794376074932
+    },
+    {
+      "id": "tx_bda7c9b849",
+      "userId": "usr_27a3472c0041",
+      "username": "EcoTester_4cb3fd7f",
+      "currency": "GOLD",
+      "amount": 500,
+      "type": "TOURNAMENT_PRIZE",
+      "description": "1st Place: Test Cup",
+      "createdAt": 1794376074932
+    },
+    {
+      "id": "tx_d72225ffe8",
+      "userId": "usr_ec640aeb9aff",
+      "username": "EcoRival_4cb3fd7f",
+      "currency": "GOLD",
+      "amount": 120,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: tournament_contender",
+      "createdAt": 1794376074931
+    },
+    {
+      "id": "tx_3be1f2b35f",
+      "userId": "usr_27a3472c0041",
+      "username": "EcoTester_4cb3fd7f",
+      "currency": "GOLD",
+      "amount": -150,
+      "type": "PURCHASE",
+      "description": "Purchased av_crimson_don",
+      "createdAt": 1794376074826
+    },
+    {
+      "id": "tx_3785abf790",
+      "userId": "usr_27a3472c0041",
+      "username": "EcoTester_4cb3fd7f",
+      "currency": "GOLD",
+      "amount": 80,
+      "type": "DAILY_REWARD",
+      "description": "Day 2 Login Reward",
+      "createdAt": 1794376074823
+    },
+    {
+      "id": "tx_6aa6d73b88",
+      "userId": "usr_27a3472c0041",
+      "username": "EcoTester_4cb3fd7f",
+      "currency": "GOLD",
+      "amount": 50,
+      "type": "DAILY_REWARD",
+      "description": "Day 1 Login Reward",
+      "createdAt": 1794376074822
+    },
+    {
+      "id": "tx_d5e3c3ae41",
+      "userId": "usr_ec640aeb9aff",
+      "username": "EcoRival_4cb3fd7f",
+      "currency": "GOLD",
+      "amount": 50,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: first_blood",
+      "createdAt": 1794376074819
+    },
+    {
+      "id": "tx_a7dcbaf896",
+      "userId": "usr_ec640aeb9aff",
+      "username": "EcoRival_4cb3fd7f",
+      "currency": "GOLD",
+      "amount": 20,
+      "type": "GAME_REWARD",
+      "description": "Match TST001 (CLASSIC)",
+      "createdAt": 1794376074819
+    },
+    {
+      "id": "tx_efbc21fafb",
+      "userId": "usr_27a3472c0041",
+      "username": "EcoTester_4cb3fd7f",
+      "currency": "GOLD",
+      "amount": 100,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: level_5",
+      "createdAt": 1794376074819
+    },
+    {
+      "id": "tx_8775d43f04",
+      "userId": "usr_27a3472c0041",
+      "username": "EcoTester_4cb3fd7f",
+      "currency": "GOLD",
+      "amount": 100,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: survivor_badge",
+      "createdAt": 1794376074819
+    },
+    {
+      "id": "tx_469d0a3d93",
+      "userId": "usr_27a3472c0041",
+      "username": "EcoTester_4cb3fd7f",
+      "currency": "GOLD",
+      "amount": 180,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: master_detective",
+      "createdAt": 1794376074819
+    },
+    {
+      "id": "tx_e7f0fb3b66",
+      "userId": "usr_27a3472c0041",
+      "username": "EcoTester_4cb3fd7f",
+      "currency": "GOLD",
+      "amount": 100,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: town_hero",
+      "createdAt": 1794376074819
+    },
+    {
+      "id": "tx_f66df55c0c",
+      "userId": "usr_27a3472c0041",
+      "username": "EcoTester_4cb3fd7f",
+      "currency": "GOLD",
+      "amount": 200,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: perfect_victory",
+      "createdAt": 1794376074819
+    },
+    {
+      "id": "tx_2c0fe81114",
+      "userId": "usr_27a3472c0041",
+      "username": "EcoTester_4cb3fd7f",
+      "currency": "GOLD",
+      "amount": 75,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: first_win",
+      "createdAt": 1794376074819
+    },
+    {
+      "id": "tx_4d3f90a81f",
+      "userId": "usr_27a3472c0041",
+      "username": "EcoTester_4cb3fd7f",
+      "currency": "GOLD",
+      "amount": 50,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: first_blood",
+      "createdAt": 1794376074819
+    },
+    {
+      "id": "tx_57df5f7604",
+      "userId": "usr_27a3472c0041",
+      "username": "EcoTester_4cb3fd7f",
+      "currency": "GOLD",
+      "amount": 80,
+      "type": "GAME_REWARD",
+      "description": "Match TST001 (CLASSIC)",
+      "createdAt": 1794376074819
+    },
+    {
+      "id": "tx_7084468374",
+      "userId": "usr_d48bacc064be",
+      "username": "EcoTester_12d9dce4",
+      "currency": "DIAMONDS",
+      "amount": 30,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: tournament_champion",
+      "createdAt": 1794376046445
+    },
+    {
+      "id": "tx_c017616c3d",
+      "userId": "usr_d48bacc064be",
+      "username": "EcoTester_12d9dce4",
+      "currency": "GOLD",
+      "amount": 1000,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: tournament_champion",
+      "createdAt": 1794376046445
+    },
+    {
+      "id": "tx_a39cf4a0d6",
+      "userId": "usr_d48bacc064be",
+      "username": "EcoTester_12d9dce4",
+      "currency": "DIAMONDS",
+      "amount": 10,
+      "type": "TOURNAMENT_PRIZE",
+      "description": "1st Place: Test Cup",
+      "createdAt": 1794376046444
+    },
+    {
+      "id": "tx_9eedbc8169",
+      "userId": "usr_d48bacc064be",
+      "username": "EcoTester_12d9dce4",
+      "currency": "GOLD",
+      "amount": 500,
+      "type": "TOURNAMENT_PRIZE",
+      "description": "1st Place: Test Cup",
+      "createdAt": 1794376046444
+    },
+    {
+      "id": "tx_fbd849266b",
+      "userId": "usr_ff512f8fbc93",
+      "username": "EcoRival_12d9dce4",
+      "currency": "GOLD",
+      "amount": 120,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: tournament_contender",
+      "createdAt": 1794376046443
+    },
+    {
+      "id": "tx_7070b95086",
+      "userId": "usr_d48bacc064be",
+      "username": "EcoTester_12d9dce4",
+      "currency": "GOLD",
+      "amount": -150,
+      "type": "PURCHASE",
+      "description": "Purchased av_crimson_don",
+      "createdAt": 1794376046343
+    },
+    {
+      "id": "tx_61d0770fa1",
+      "userId": "usr_d48bacc064be",
+      "username": "EcoTester_12d9dce4",
+      "currency": "GOLD",
+      "amount": 80,
+      "type": "DAILY_REWARD",
+      "description": "Day 2 Login Reward",
+      "createdAt": 1794376046342
+    },
+    {
+      "id": "tx_bc0ea2408d",
+      "userId": "usr_d48bacc064be",
+      "username": "EcoTester_12d9dce4",
+      "currency": "GOLD",
+      "amount": 50,
+      "type": "DAILY_REWARD",
+      "description": "Day 1 Login Reward",
+      "createdAt": 1794376046340
+    },
+    {
+      "id": "tx_99b15f3de3",
+      "userId": "usr_ff512f8fbc93",
+      "username": "EcoRival_12d9dce4",
+      "currency": "GOLD",
+      "amount": 50,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: first_blood",
+      "createdAt": 1794376046337
+    },
+    {
+      "id": "tx_cbac657721",
+      "userId": "usr_ff512f8fbc93",
+      "username": "EcoRival_12d9dce4",
+      "currency": "GOLD",
+      "amount": 20,
+      "type": "GAME_REWARD",
+      "description": "Match TST001 (CLASSIC)",
+      "createdAt": 1794376046337
+    },
+    {
+      "id": "tx_2506ee53cd",
+      "userId": "usr_d48bacc064be",
+      "username": "EcoTester_12d9dce4",
+      "currency": "GOLD",
+      "amount": 100,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: level_5",
+      "createdAt": 1794376046337
+    },
+    {
+      "id": "tx_f2895eba31",
+      "userId": "usr_d48bacc064be",
+      "username": "EcoTester_12d9dce4",
+      "currency": "GOLD",
+      "amount": 100,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: survivor_badge",
+      "createdAt": 1794376046337
+    },
+    {
+      "id": "tx_b357918174",
+      "userId": "usr_d48bacc064be",
+      "username": "EcoTester_12d9dce4",
+      "currency": "GOLD",
+      "amount": 180,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: master_detective",
+      "createdAt": 1794376046337
+    },
+    {
+      "id": "tx_c8af9d8bb8",
+      "userId": "usr_d48bacc064be",
+      "username": "EcoTester_12d9dce4",
+      "currency": "GOLD",
+      "amount": 100,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: town_hero",
+      "createdAt": 1794376046337
+    },
+    {
+      "id": "tx_01b4f90e81",
+      "userId": "usr_d48bacc064be",
+      "username": "EcoTester_12d9dce4",
+      "currency": "GOLD",
+      "amount": 200,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: perfect_victory",
+      "createdAt": 1794376046337
+    },
+    {
+      "id": "tx_2bfd66b242",
+      "userId": "usr_d48bacc064be",
+      "username": "EcoTester_12d9dce4",
+      "currency": "GOLD",
+      "amount": 75,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: first_win",
+      "createdAt": 1794376046337
+    },
+    {
+      "id": "tx_6fc924c577",
+      "userId": "usr_d48bacc064be",
+      "username": "EcoTester_12d9dce4",
+      "currency": "GOLD",
+      "amount": 50,
+      "type": "ACHIEVEMENT",
+      "description": "Achievement: first_blood",
+      "createdAt": 1794376046337
+    },
+    {
+      "id": "tx_2968e7e15f",
+      "userId": "usr_d48bacc064be",
+      "username": "EcoTester_12d9dce4",
+      "currency": "GOLD",
+      "amount": 80,
+      "type": "GAME_REWARD",
+      "description": "Match TST001 (CLASSIC)",
+      "createdAt": 1794376046336
+    }
+  ],
+  "tournaments": [
+    {
+      "id": "trn_1ec8e98625",
+      "name": "Test Cup",
+      "format": "SINGLE_ELIMINATION",
+      "mode": "CLASSIC",
+      "maxPlayers": 4,
+      "prizeGold": 500,
+      "prizeDiamonds": 10,
+      "entryFeeGold": 0,
+      "status": "COMPLETED",
+      "createdBy": "usr_cc55384e1777",
+      "participants": [
+        "usr_cc55384e1777",
+        "usr_901d1d1969b6"
+      ],
+      "matches": [
+        {
+          "id": "tm_1",
+          "round": 1,
+          "matchNumber": 1,
+          "bracket": "WINNERS",
+          "player1Id": "usr_901d1d1969b6",
+          "player2Id": "usr_cc55384e1777",
+          "winnerId": "usr_cc55384e1777",
+          "status": "COMPLETED",
+          "scheduledAt": 1794402513876
+        }
+      ],
+      "podiumIds": [
+        "usr_cc55384e1777",
+        "usr_901d1d1969b6"
+      ],
+      "createdAt": 1794402213874,
+      "startsAt": 1794405813874,
+      "winnerId": "usr_cc55384e1777"
+    },
+    {
+      "id": "trn_b87b27d54f",
+      "name": "Test Cup",
+      "format": "SINGLE_ELIMINATION",
+      "mode": "CLASSIC",
+      "maxPlayers": 4,
+      "prizeGold": 500,
+      "prizeDiamonds": 10,
+      "entryFeeGold": 0,
+      "status": "COMPLETED",
+      "createdBy": "usr_709d92eeab35",
+      "participants": [
+        "usr_709d92eeab35",
+        "usr_98d509ff3f19"
+      ],
+      "matches": [
+        {
+          "id": "tm_1",
+          "round": 1,
+          "matchNumber": 1,
+          "bracket": "WINNERS",
+          "player1Id": "usr_709d92eeab35",
+          "player2Id": "usr_98d509ff3f19",
+          "winnerId": "usr_709d92eeab35",
+          "status": "COMPLETED",
+          "scheduledAt": 1794400121143
+        }
+      ],
+      "podiumIds": [
+        "usr_709d92eeab35",
+        "usr_98d509ff3f19"
+      ],
+      "createdAt": 1794399821139,
+      "startsAt": 1794403421139,
+      "winnerId": "usr_709d92eeab35"
+    },
+    {
+      "id": "trn_a5bd115955",
+      "name": "Test Cup",
+      "format": "SINGLE_ELIMINATION",
+      "mode": "CLASSIC",
+      "maxPlayers": 4,
+      "prizeGold": 500,
+      "prizeDiamonds": 10,
+      "entryFeeGold": 0,
+      "status": "COMPLETED",
+      "createdBy": "usr_4224928524f8",
+      "participants": [
+        "usr_4224928524f8",
+        "usr_826360dce59b"
+      ],
+      "matches": [
+        {
+          "id": "tm_1",
+          "round": 1,
+          "matchNumber": 1,
+          "bracket": "WINNERS",
+          "player1Id": "usr_4224928524f8",
+          "player2Id": "usr_826360dce59b",
+          "winnerId": "usr_4224928524f8",
+          "status": "COMPLETED",
+          "scheduledAt": 1794377414337
+        }
+      ],
+      "podiumIds": [
+        "usr_4224928524f8",
+        "usr_826360dce59b"
+      ],
+      "createdAt": 1794377114335,
+      "startsAt": 1794380714335,
+      "winnerId": "usr_4224928524f8"
+    },
+    {
+      "id": "trn_988d710baf",
+      "name": "Test Cup",
+      "format": "SINGLE_ELIMINATION",
+      "mode": "CLASSIC",
+      "maxPlayers": 4,
+      "prizeGold": 500,
+      "prizeDiamonds": 10,
+      "entryFeeGold": 0,
+      "status": "COMPLETED",
+      "createdBy": "usr_27a3472c0041",
+      "participants": [
+        "usr_27a3472c0041",
+        "usr_ec640aeb9aff"
+      ],
+      "matches": [
+        {
+          "id": "tm_1",
+          "round": 1,
+          "matchNumber": 1,
+          "bracket": "WINNERS",
+          "player1Id": "usr_27a3472c0041",
+          "player2Id": "usr_ec640aeb9aff",
+          "winnerId": "usr_27a3472c0041",
+          "status": "COMPLETED",
+          "scheduledAt": 1794376374931
+        }
+      ],
+      "podiumIds": [
+        "usr_27a3472c0041",
+        "usr_ec640aeb9aff"
+      ],
+      "createdAt": 1794376074930,
+      "startsAt": 1794379674930,
+      "winnerId": "usr_27a3472c0041"
+    },
+    {
+      "id": "trn_6690ee2bd8",
+      "name": "Test Cup",
+      "format": "SINGLE_ELIMINATION",
+      "mode": "CLASSIC",
+      "maxPlayers": 4,
+      "prizeGold": 500,
+      "prizeDiamonds": 10,
+      "entryFeeGold": 0,
+      "status": "COMPLETED",
+      "createdBy": "usr_d48bacc064be",
+      "participants": [
+        "usr_d48bacc064be",
+        "usr_ff512f8fbc93"
+      ],
+      "matches": [
+        {
+          "id": "tm_1",
+          "round": 1,
+          "matchNumber": 1,
+          "bracket": "WINNERS",
+          "player1Id": "usr_ff512f8fbc93",
+          "player2Id": "usr_d48bacc064be",
+          "winnerId": "usr_d48bacc064be",
+          "status": "COMPLETED",
+          "scheduledAt": 1794376346444
+        }
+      ],
+      "podiumIds": [
+        "usr_d48bacc064be",
+        "usr_ff512f8fbc93"
+      ],
+      "createdAt": 1794376046442,
+      "startsAt": 1794379646442,
+      "winnerId": "usr_d48bacc064be"
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": "aud_ab09aa4cbc",
+      "actorId": "usr_cc55384e1777",
+      "actorName": "EcoTester_2fa3d52a",
+      "action": "TOURNAMENT_MATCH_RESULT",
+      "details": "Test Cup tm_1 -> usr_cc55384e1777",
+      "severity": "INFO",
+      "createdAt": 1794402213877
+    },
+    {
+      "id": "aud_142a857663",
+      "actorId": "usr_cc55384e1777",
+      "actorName": "EcoTester_2fa3d52a",
+      "action": "TOURNAMENT_STARTED",
+      "details": "Test Cup",
+      "severity": "INFO",
+      "createdAt": 1794402213876
+    },
+    {
+      "id": "aud_de636cc7ad",
+      "actorId": "usr_cc55384e1777",
+      "actorName": "EcoTester_2fa3d52a",
+      "action": "TOURNAMENT_CREATED",
+      "details": "Test Cup",
+      "severity": "INFO",
+      "createdAt": 1794402213874
+    },
+    {
+      "id": "aud_2bb57178d5",
+      "actorId": "usr_cc55384e1777",
+      "actorName": "EcoTester_2fa3d52a",
+      "action": "SUBSCRIPTION_CANCELLED",
+      "details": "Cancelled by user",
+      "severity": "INFO",
+      "createdAt": 1794402213872
+    },
+    {
+      "id": "aud_1fea6c3484",
+      "actorId": "usr_cc55384e1777",
+      "actorName": "EcoTester_2fa3d52a",
+      "action": "SUBSCRIPTION_ACTIVATED",
+      "details": "Verified via stripe",
+      "severity": "INFO",
+      "createdAt": 1794402213871
+    },
+    {
+      "id": "aud_61ab482e96",
+      "actorId": "usr_cc55384e1777",
+      "actorName": "EcoTester_2fa3d52a",
+      "action": "SUBSCRIPTION_VERIFY_FAILED",
+      "details": "Invalid token for stripe",
+      "severity": "WARN",
+      "createdAt": 1794402213870
+    },
+    {
+      "id": "aud_07a8ef0947",
+      "actorId": "usr_cc55384e1777",
+      "actorName": "EcoTester_2fa3d52a",
+      "action": "COSMETIC_PURCHASE",
+      "details": "Bought av_crimson_don",
+      "severity": "INFO",
+      "createdAt": 1794402213823
+    },
+    {
+      "id": "aud_a737989d8d",
+      "actorId": "usr_901d1d1969b6",
+      "actorName": "EcoRival_2fa3d52a",
+      "action": "USER_REGISTERED",
+      "details": "Registered from RU",
+      "severity": "INFO",
+      "createdAt": 1794402213810
+    },
+    {
+      "id": "aud_6f6b7e2374",
+      "actorId": "usr_cc55384e1777",
+      "actorName": "EcoTester_2fa3d52a",
+      "action": "USER_REGISTERED",
+      "details": "Registered from UZ",
+      "severity": "INFO",
+      "createdAt": 1794402213699
+    },
+    {
+      "id": "aud_fafdecda74",
+      "actorId": "usr_709d92eeab35",
+      "actorName": "EcoTester_61bbba26",
+      "action": "TOURNAMENT_MATCH_RESULT",
+      "details": "Test Cup tm_1 -> usr_709d92eeab35",
+      "severity": "INFO",
+      "createdAt": 1794399821144
+    },
+    {
+      "id": "aud_8bc4de57bf",
+      "actorId": "usr_709d92eeab35",
+      "actorName": "EcoTester_61bbba26",
+      "action": "TOURNAMENT_STARTED",
+      "details": "Test Cup",
+      "severity": "INFO",
+      "createdAt": 1794399821143
+    },
+    {
+      "id": "aud_f63525d77d",
+      "actorId": "usr_709d92eeab35",
+      "actorName": "EcoTester_61bbba26",
+      "action": "TOURNAMENT_CREATED",
+      "details": "Test Cup",
+      "severity": "INFO",
+      "createdAt": 1794399821139
+    },
+    {
+      "id": "aud_3c04bab5a9",
+      "actorId": "usr_709d92eeab35",
+      "actorName": "EcoTester_61bbba26",
+      "action": "SUBSCRIPTION_CANCELLED",
+      "details": "Cancelled by user",
+      "severity": "INFO",
+      "createdAt": 1794399821138
+    },
+    {
+      "id": "aud_58cfb05ccd",
+      "actorId": "usr_709d92eeab35",
+      "actorName": "EcoTester_61bbba26",
+      "action": "SUBSCRIPTION_ACTIVATED",
+      "details": "Verified via stripe",
+      "severity": "INFO",
+      "createdAt": 1794399821137
+    },
+    {
+      "id": "aud_cdaead3ca1",
+      "actorId": "usr_709d92eeab35",
+      "actorName": "EcoTester_61bbba26",
+      "action": "SUBSCRIPTION_VERIFY_FAILED",
+      "details": "Invalid token for stripe",
+      "severity": "WARN",
+      "createdAt": 1794399821136
+    },
+    {
+      "id": "aud_3195e3a4ec",
+      "actorId": "usr_709d92eeab35",
+      "actorName": "EcoTester_61bbba26",
+      "action": "COSMETIC_PURCHASE",
+      "details": "Bought av_crimson_don",
+      "severity": "INFO",
+      "createdAt": 1794399821027
+    },
+    {
+      "id": "aud_a4c7c5e662",
+      "actorId": "usr_98d509ff3f19",
+      "actorName": "EcoRival_61bbba26",
+      "action": "USER_REGISTERED",
+      "details": "Registered from RU",
+      "severity": "INFO",
+      "createdAt": 1794399821009
+    },
+    {
+      "id": "aud_1faa6039d3",
+      "actorId": "usr_709d92eeab35",
+      "actorName": "EcoTester_61bbba26",
+      "action": "USER_REGISTERED",
+      "details": "Registered from UZ",
+      "severity": "INFO",
+      "createdAt": 1794399820840
+    },
+    {
+      "id": "aud_49aeef7507",
+      "actorId": "usr_4224928524f8",
+      "actorName": "EcoTester_3ba9f0e7",
+      "action": "TOURNAMENT_MATCH_RESULT",
+      "details": "Test Cup tm_1 -> usr_4224928524f8",
+      "severity": "INFO",
+      "createdAt": 1794377114338
+    },
+    {
+      "id": "aud_7e138968c2",
+      "actorId": "usr_4224928524f8",
+      "actorName": "EcoTester_3ba9f0e7",
+      "action": "TOURNAMENT_STARTED",
+      "details": "Test Cup",
+      "severity": "INFO",
+      "createdAt": 1794377114337
+    },
+    {
+      "id": "aud_e24a00f5c7",
+      "actorId": "usr_4224928524f8",
+      "actorName": "EcoTester_3ba9f0e7",
+      "action": "TOURNAMENT_CREATED",
+      "details": "Test Cup",
+      "severity": "INFO",
+      "createdAt": 1794377114335
+    },
+    {
+      "id": "aud_8a8609f460",
+      "actorId": "usr_4224928524f8",
+      "actorName": "EcoTester_3ba9f0e7",
+      "action": "SUBSCRIPTION_CANCELLED",
+      "details": "Cancelled by user",
+      "severity": "INFO",
+      "createdAt": 1794377114333
+    },
+    {
+      "id": "aud_63c6a4f161",
+      "actorId": "usr_4224928524f8",
+      "actorName": "EcoTester_3ba9f0e7",
+      "action": "SUBSCRIPTION_ACTIVATED",
+      "details": "Verified via stripe",
+      "severity": "INFO",
+      "createdAt": 1794377114332
+    },
+    {
+      "id": "aud_60ad7ad9b5",
+      "actorId": "usr_4224928524f8",
+      "actorName": "EcoTester_3ba9f0e7",
+      "action": "SUBSCRIPTION_VERIFY_FAILED",
+      "details": "Invalid token for stripe",
+      "severity": "WARN",
+      "createdAt": 1794377114332
+    },
+    {
+      "id": "aud_a1e671998a",
+      "actorId": "usr_4224928524f8",
+      "actorName": "EcoTester_3ba9f0e7",
+      "action": "COSMETIC_PURCHASE",
+      "details": "Bought av_crimson_don",
+      "severity": "INFO",
+      "createdAt": 1794377114261
+    },
+    {
+      "id": "aud_1efe280f5b",
+      "actorId": "usr_826360dce59b",
+      "actorName": "EcoRival_3ba9f0e7",
+      "action": "USER_REGISTERED",
+      "details": "Registered from RU",
+      "severity": "INFO",
+      "createdAt": 1794377114243
+    },
+    {
+      "id": "aud_5da3d919a6",
+      "actorId": "usr_4224928524f8",
+      "actorName": "EcoTester_3ba9f0e7",
+      "action": "USER_REGISTERED",
+      "details": "Registered from UZ",
+      "severity": "INFO",
+      "createdAt": 1794377114137
+    },
+    {
+      "id": "aud_264a90126e",
+      "actorId": "usr_27a3472c0041",
+      "actorName": "EcoTester_4cb3fd7f",
+      "action": "TOURNAMENT_MATCH_RESULT",
+      "details": "Test Cup tm_1 -> usr_27a3472c0041",
+      "severity": "INFO",
+      "createdAt": 1794376074932
+    },
+    {
+      "id": "aud_b477738966",
+      "actorId": "usr_27a3472c0041",
+      "actorName": "EcoTester_4cb3fd7f",
+      "action": "TOURNAMENT_STARTED",
+      "details": "Test Cup",
+      "severity": "INFO",
+      "createdAt": 1794376074931
+    },
+    {
+      "id": "aud_5781d081c7",
+      "actorId": "usr_27a3472c0041",
+      "actorName": "EcoTester_4cb3fd7f",
+      "action": "TOURNAMENT_CREATED",
+      "details": "Test Cup",
+      "severity": "INFO",
+      "createdAt": 1794376074930
+    },
+    {
+      "id": "aud_3c7436a50a",
+      "actorId": "usr_27a3472c0041",
+      "actorName": "EcoTester_4cb3fd7f",
+      "action": "SUBSCRIPTION_CANCELLED",
+      "details": "Cancelled by user",
+      "severity": "INFO",
+      "createdAt": 1794376074929
+    },
+    {
+      "id": "aud_6726df7e41",
+      "actorId": "usr_27a3472c0041",
+      "actorName": "EcoTester_4cb3fd7f",
+      "action": "SUBSCRIPTION_ACTIVATED",
+      "details": "Verified via stripe",
+      "severity": "INFO",
+      "createdAt": 1794376074928
+    },
+    {
+      "id": "aud_190ce1fca1",
+      "actorId": "usr_27a3472c0041",
+      "actorName": "EcoTester_4cb3fd7f",
+      "action": "SUBSCRIPTION_VERIFY_FAILED",
+      "details": "Invalid token for stripe",
+      "severity": "WARN",
+      "createdAt": 1794376074927
+    },
+    {
+      "id": "aud_c236b46e1f",
+      "actorId": "usr_27a3472c0041",
+      "actorName": "EcoTester_4cb3fd7f",
+      "action": "COSMETIC_PURCHASE",
+      "details": "Bought av_crimson_don",
+      "severity": "INFO",
+      "createdAt": 1794376074826
+    },
+    {
+      "id": "aud_4b3fdd4a55",
+      "actorId": "usr_ec640aeb9aff",
+      "actorName": "EcoRival_4cb3fd7f",
+      "action": "USER_REGISTERED",
+      "details": "Registered from RU",
+      "severity": "INFO",
+      "createdAt": 1794376074812
+    },
+    {
+      "id": "aud_613016e8d8",
+      "actorId": "usr_27a3472c0041",
+      "actorName": "EcoTester_4cb3fd7f",
+      "action": "USER_REGISTERED",
+      "details": "Registered from UZ",
+      "severity": "INFO",
+      "createdAt": 1794376074619
+    },
+    {
+      "id": "aud_2ccb40b0a9",
+      "actorId": "usr_d48bacc064be",
+      "actorName": "EcoTester_12d9dce4",
+      "action": "TOURNAMENT_MATCH_RESULT",
+      "details": "Test Cup tm_1 -> usr_d48bacc064be",
+      "severity": "INFO",
+      "createdAt": 1794376046445
+    },
+    {
+      "id": "aud_205c4f5ff5",
+      "actorId": "usr_d48bacc064be",
+      "actorName": "EcoTester_12d9dce4",
+      "action": "TOURNAMENT_STARTED",
+      "details": "Test Cup",
+      "severity": "INFO",
+      "createdAt": 1794376046444
+    },
+    {
+      "id": "aud_ec9e3cfce8",
+      "actorId": "usr_d48bacc064be",
+      "actorName": "EcoTester_12d9dce4",
+      "action": "TOURNAMENT_CREATED",
+      "details": "Test Cup",
+      "severity": "INFO",
+      "createdAt": 1794376046442
+    },
+    {
+      "id": "aud_b4df8523de",
+      "actorId": "usr_d48bacc064be",
+      "actorName": "EcoTester_12d9dce4",
+      "action": "SUBSCRIPTION_CANCELLED",
+      "details": "Cancelled by user",
+      "severity": "INFO",
+      "createdAt": 1794376046439
+    },
+    {
+      "id": "aud_3cb6a410de",
+      "actorId": "usr_d48bacc064be",
+      "actorName": "EcoTester_12d9dce4",
+      "action": "SUBSCRIPTION_ACTIVATED",
+      "details": "Verified via stripe",
+      "severity": "INFO",
+      "createdAt": 1794376046438
+    },
+    {
+      "id": "aud_6239ed549f",
+      "actorId": "usr_d48bacc064be",
+      "actorName": "EcoTester_12d9dce4",
+      "action": "SUBSCRIPTION_VERIFY_FAILED",
+      "details": "Invalid token for stripe",
+      "severity": "WARN",
+      "createdAt": 1794376046434
+    },
+    {
+      "id": "aud_129472f55b",
+      "actorId": "usr_d48bacc064be",
+      "actorName": "EcoTester_12d9dce4",
+      "action": "COSMETIC_PURCHASE",
+      "details": "Bought av_crimson_don",
+      "severity": "INFO",
+      "createdAt": 1794376046343
+    },
+    {
+      "id": "aud_b5baec0a79",
+      "actorId": "usr_ff512f8fbc93",
+      "actorName": "EcoRival_12d9dce4",
+      "action": "USER_REGISTERED",
+      "details": "Registered from RU",
+      "severity": "INFO",
+      "createdAt": 1794376046329
+    },
+    {
+      "id": "aud_61ce2552a3",
+      "actorId": "usr_d48bacc064be",
+      "actorName": "EcoTester_12d9dce4",
+      "action": "USER_REGISTERED",
+      "details": "Registered from UZ",
+      "severity": "INFO",
+      "createdAt": 1794376046119
+    }
+  ],
+  "serverConfig": {
+    "maintenanceMode": false,
+    "defaultTimers": {
+      "roleAssignment": 6,
+      "night": 30,
+      "day": 10,
+      "discussion": 45,
+      "voting": 25,
+      "execution": 6
+    },
+    "enabledModes": [
+      "CLASSIC",
+      "ADVANCED",
+      "CHAOS"
+    ]
+  }
+}

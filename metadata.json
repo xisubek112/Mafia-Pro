@@ -1,0 +1,6 @@
+{
+  "name": "MAFIA PRO",
+  "description": "Trust Nobody. Survive the Night. Real-time multiplayer Mafia social deduction web game.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
