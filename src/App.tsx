@@ -78,7 +78,7 @@ const MainShell: React.FC = () => {
         >
           <Bot className="w-4 h-4 text-amber-200 animate-pulse" />
           <span className="hidden sm:inline">
-            {lang === 'uz' ? 'AI Yordamchi & Qoidalar' : 'AI Помощник и База'}
+            {lang === 'uz' ? 'DON AI • Yordamchi' : 'DON AI • Советник'}
           </span>
         </button>
       )}

@@ -15,6 +15,13 @@ import {
 } from '../shared/ecosystem';
 import { createDefaultSeason1, DEFAULT_KNOWLEDGE_ARTICLES } from '../shared/ecosystemData';
 import {
+  createDefaultFunctionalShopProducts,
+  createFunctionalProductCategories,
+  isFunctionalCategory,
+  isLegacyCosmeticCategory,
+} from '../shared/functionalShop';
+import { ROLE_LIST, ROLES } from '../shared/roles';
+import {
   AchievementDef,
   AdminModuleId,
   AdminNotificationRecord,
@@ -32,9 +39,14 @@ import {
   CosmeticCategory,
   CurrencyTransaction,
   DirectMessage,
+  FunctionalEffectType,
+  FunctionalItemCategory,
   GameHistoryRecord,
   GameMode,
+  GamePhase,
   InventoryItemRecord,
+  InventoryTransactionRecord,
+  ItemUsageHistoryRecord,
   MatchmakingTicket,
   ModerationReport,
   ModulePermissionSet,
@@ -58,6 +70,7 @@ import {
   SecurityEventType,
   ShopProduct,
   SpectatorSession,
+  StatisticsResetRecord,
   SubscriptionRecord,
   SupportTicket,
   SystemEventRecord,
@@ -88,6 +101,9 @@ interface DatabaseSchema {
   productCategories: ProductCategory[];
   shopProducts: ShopProduct[];
   inventory: InventoryItemRecord[];
+  inventoryTransactions: InventoryTransactionRecord[];
+  itemUsageHistory: ItemUsageHistoryRecord[];
+  statisticsResetHistory: StatisticsResetRecord[];
   orders: OrderRecord[];
   payments: PaymentRecord[];
   paymentEvents: PaymentEventRecord[];
@@ -218,6 +234,8 @@ function hydrateUser(u: Partial<StoredUser>): StoredUser {
     unlockedTitles: u.unlockedTitles || [],
     ownedCosmetics: u.ownedCosmetics || [],
     equippedCosmetics: u.equippedCosmetics || {},
+    unlockedRoles: u.unlockedRoles || [],
+    activeRolePreference: u.activeRolePreference,
     subscription: u.subscription || { tier: 'FREE', status: 'NONE', verified: false },
     dailyReward: u.dailyReward || { streak: 0, lastClaimAt: 0, totalClaims: 0 },
     missionProgress: u.missionProgress || {},
@@ -291,109 +309,11 @@ function createDefaultVipPlans(now = Date.now()): VipPlan[] {
 }
 
 function createDefaultCategories(): ProductCategory[] {
-  return [
-    { id: 'cat_avatar', slug: 'AVATAR', name: { uz: 'Avatarlar', ru: 'Аватары' }, sortOrder: 1, isActive: true },
-    { id: 'cat_frame', slug: 'FRAME', name: { uz: 'Profil ramkalari', ru: 'Рамки профиля' }, sortOrder: 2, isActive: true },
-    { id: 'cat_name_effect', slug: 'NAME_EFFECT', name: { uz: 'Ism effektlari', ru: 'Эффекты имени' }, sortOrder: 3, isActive: true },
-    { id: 'cat_chat_dec', slug: 'CHAT_DECORATION', name: { uz: 'Chat bezaklari', ru: 'Украшения чата' }, sortOrder: 4, isActive: true },
-    { id: 'cat_profile_bg', slug: 'PROFILE_BG', name: { uz: 'Profil fonlari', ru: 'Фоны профиля' }, sortOrder: 5, isActive: true },
-    { id: 'cat_badge', slug: 'BADGE', name: { uz: 'Maxsus nishonlar', ru: 'Особые значки' }, sortOrder: 6, isActive: true },
-    { id: 'cat_lobby_theme', slug: 'LOBBY_THEME', name: { uz: 'Xona mavzulari', ru: 'Темы комнат' }, sortOrder: 7, isActive: true },
-    { id: 'cat_card_skin', slug: 'CARD_SKIN', name: { uz: 'Karta terilari', ru: 'Скины карт' }, sortOrder: 8, isActive: true },
-    { id: 'cat_victory_anim', slug: 'VICTORY_ANIM', name: { uz: 'G‘alaba animatsiyasi', ru: 'Анимации победы' }, sortOrder: 9, isActive: true },
-  ];
+  return createFunctionalProductCategories();
 }
 
 function createDefaultShopProducts(now = Date.now()): ShopProduct[] {
-  const mapped: ShopProduct[] = COSMETICS.map((c) => {
-    const baseUzs = c.priceGold ? c.priceGold * 25 : (c.priceDiamonds || 10) * 800;
-    return {
-      id: c.id,
-      category: c.category,
-      name: c.name,
-      description: c.description,
-      imageUrl: '',
-      priceUzs: Math.max(3000, Math.round(baseUzs / 500) * 500),
-      priceGold: c.priceGold,
-      priceDiamonds: c.priceDiamonds,
-      rarity: c.rarity,
-      previewColor: c.previewColor,
-      isUnique: true,
-      vipOnly: Boolean(c.premiumOnly),
-      isActive: true,
-      createdAt: now,
-      updatedAt: now,
-    };
-  });
-
-  const extraProducts: ShopProduct[] = [
-    {
-      id: 'cd_crimson_cipher',
-      category: 'CHAT_DECORATION',
-      name: { uz: 'Qizil Shifr', ru: 'Алый шифр' },
-      description: { uz: 'Chat xabarlaringiz uchun qizil chiziqli bezak', ru: 'Алая декоративная рамка для сообщений в чате' },
-      imageUrl: '',
-      priceUzs: 7500,
-      priceGold: 280,
-      rarity: 'RARE',
-      previewColor: '#E63946',
-      isUnique: true,
-      vipOnly: false,
-      isActive: true,
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: 'cd_gold_seal',
-      category: 'CHAT_DECORATION',
-      name: { uz: 'Oltin Muhr', ru: 'Золотая печать' },
-      description: { uz: 'VIP chat xabarlari uchun oltin muhr bezagi', ru: 'Золотая печать для сообщений VIP-игроков' },
-      imageUrl: '',
-      priceUzs: 14000,
-      priceDiamonds: 18,
-      rarity: 'LEGENDARY',
-      previewColor: '#E7B65B',
-      isUnique: true,
-      vipOnly: true,
-      isActive: true,
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: 'pb_noir_penthouse',
-      category: 'PROFILE_BG',
-      name: { uz: 'Noir Penthaus', ru: 'Нуар Пентхаус' },
-      description: { uz: 'Tungi shahar manzarali premium profil foni', ru: 'Премиальный фон профиля с видом на ночной город' },
-      imageUrl: '',
-      priceUzs: 12000,
-      priceGold: 450,
-      rarity: 'EPIC',
-      previewColor: '#38BDF8',
-      isUnique: true,
-      vipOnly: false,
-      isActive: true,
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: 'pb_imperial_vault',
-      category: 'PROFILE_BG',
-      name: { uz: 'Imperator Xazinasi', ru: 'Императорский зал' },
-      description: { uz: 'Oltin va qora baxmal VIP profil foni', ru: 'Роскошный чёрно-золотой VIP фон профиля' },
-      imageUrl: '',
-      priceUzs: 19000,
-      priceDiamonds: 25,
-      rarity: 'LEGENDARY',
-      previewColor: '#FCD34D',
-      isUnique: true,
-      vipOnly: true,
-      isActive: true,
-      createdAt: now,
-      updatedAt: now,
-    },
-  ];
-
-  return [...mapped, ...extraProducts];
+  return createDefaultFunctionalShopProducts(now);
 }
 
 function createDefaultAdminRoles(): AdminRoleDef[] {
@@ -643,6 +563,9 @@ function createInitialDb(): DatabaseSchema {
     productCategories: createDefaultCategories(),
     shopProducts: createDefaultShopProducts(now),
     inventory: [],
+    inventoryTransactions: [],
+    itemUsageHistory: [],
+    statisticsResetHistory: [],
     orders: [],
     payments: [],
     paymentEvents: [],
@@ -663,7 +586,12 @@ function createInitialDb(): DatabaseSchema {
     ],
     promoRedemptions: [],
     notifications: [],
-    roleConfigs: [],
+    roleConfigs: ROLE_LIST.map((r) => ({
+      roleId: r.id,
+      imageUrl: r.imageUrl,
+      isActive: true,
+      updatedAt: now,
+    })),
     websiteSettings: createDefaultWebsiteSettings(now),
     adminRoles: createDefaultAdminRoles(),
     systemEvents: [
@@ -811,6 +739,9 @@ class PersistentStore {
               ? parsed.shopProducts
               : defaults.shopProducts,
           inventory: parsed.inventory || [],
+          inventoryTransactions: parsed.inventoryTransactions || [],
+          itemUsageHistory: parsed.itemUsageHistory || [],
+          statisticsResetHistory: parsed.statisticsResetHistory || [],
           orders: parsed.orders || [],
           payments: parsed.payments || [],
           paymentEvents: parsed.paymentEvents || [],
@@ -840,7 +771,9 @@ class PersistentStore {
               : defaults.aiKnowledgeArticles,
           supportTickets: parsed.supportTickets || defaults.supportTickets,
         };
-        if (needsEconomyMigration) {
+        const migrated = this.ensureFunctionalShopMigration();
+        const roleMigrated = this.ensureRoleArtworkMigration();
+        if (needsEconomyMigration || migrated || roleMigrated) {
           this.save();
         }
       } catch {
@@ -851,6 +784,82 @@ class PersistentStore {
       this.data = createInitialDb();
       this.save();
     }
+  }
+
+  private ensureFunctionalShopMigration(): boolean {
+    let changed = false;
+    const now = Date.now();
+    const functionalCategories = createFunctionalProductCategories();
+    const hasAllFunctionalCats = functionalCategories.every((fc) =>
+      this.data.productCategories.some((pc) => pc.slug === fc.slug)
+    );
+    const hasLegacyCats = this.data.productCategories.some((pc) => isLegacyCosmeticCategory(pc.slug));
+
+    if (!hasAllFunctionalCats || hasLegacyCats) {
+      this.data.productCategories = functionalCategories;
+      changed = true;
+    }
+
+    // Archive all legacy cosmetic shop items (do NOT delete historical order/inventory references)
+    for (const p of this.data.shopProducts) {
+      if (isLegacyCosmeticCategory(p.category) && (p.isActive || !p.isArchived)) {
+        p.isActive = false;
+        p.isArchived = true;
+        p.updatedAt = now;
+        changed = true;
+      }
+    }
+
+    // Seed any missing default functional products and convert any UZS/HYBRID functional items to in-game currency
+    const defaultFunctional = createDefaultFunctionalShopProducts(now);
+    for (const fp of defaultFunctional) {
+      const existing = this.data.shopProducts.find((p) => p.id === fp.id);
+      if (!existing) {
+        this.data.shopProducts.push(fp);
+        changed = true;
+      } else if (existing.priceUzs > 0 || existing.currencyMode === 'HYBRID' || existing.currencyMode === 'UZS') {
+        existing.priceUzs = 0;
+        existing.priceGold = fp.priceGold;
+        existing.priceDiamonds = fp.priceDiamonds;
+        existing.currencyMode = fp.currencyMode;
+        existing.updatedAt = now;
+        changed = true;
+      }
+    }
+
+    for (const p of this.data.shopProducts) {
+      if (isFunctionalCategory(p.category) && (p.priceUzs > 0 || p.currencyMode === 'HYBRID' || p.currencyMode === 'UZS')) {
+        p.priceUzs = 0;
+        if (!p.priceGold && !p.priceDiamonds) p.priceGold = 250;
+        p.currencyMode = p.priceDiamonds && !p.priceGold ? 'DIAMONDS' : 'GOLD';
+        p.updatedAt = now;
+        changed = true;
+      }
+    }
+
+    return changed;
+  }
+
+  private ensureRoleArtworkMigration(): boolean {
+    let changed = false;
+    const now = Date.now();
+    for (const role of ROLE_LIST) {
+      const existing = this.data.roleConfigs.find((r) => r.roleId === role.id);
+      if (!existing) {
+        this.data.roleConfigs.push({
+          roleId: role.id,
+          imageUrl: role.imageUrl,
+          isActive: true,
+          updatedAt: now,
+        });
+        changed = true;
+      } else if (existing.imageUrl === undefined) {
+        existing.imageUrl = role.imageUrl;
+        existing.updatedAt = now;
+        changed = true;
+      }
+    }
+    return changed;
   }
 
   public createBackupSnapshot(rawOverride?: string): string {
@@ -1285,67 +1294,18 @@ class PersistentStore {
     return false;
   }
 
-  public purchaseCosmetic(userId: string, itemId: string): UserProfile {
-    const user = this.findUserById(userId);
-    if (!user) throw new Error('User not found');
-    this.expireVipIfNeeded(user);
-
-    const product = this.data.shopProducts.find((p) => p.id === itemId && p.isActive);
-    const legacy = COSMETICS.find((c) => c.id === itemId);
-    const item = product || (legacy ? {
-      id: legacy.id,
-      category: legacy.category,
-      priceGold: legacy.priceGold,
-      priceDiamonds: legacy.priceDiamonds,
-      vipOnly: Boolean(legacy.premiumOnly),
-      isUnique: true,
-    } : null);
-
-    if (!item) throw new Error('Cosmetic item not found');
-    if (item.isUnique && user.ownedCosmetics.includes(itemId)) throw new Error('Item already owned');
-
-    if (item.vipOnly && (user.subscription.tier !== 'ELITE' || user.subscription.status !== 'ACTIVE')) {
-      throw new Error('Active ELITE membership required for this item');
-    }
-
-    if (item.priceGold && item.priceGold > 0) {
-      if (user.gold < item.priceGold) throw new Error('Insufficient Gold');
-      user.gold -= item.priceGold;
-      this.recordTransaction(user, 'GOLD', -item.priceGold, 'PURCHASE', `Purchased ${item.id}`);
-    } else if (item.priceDiamonds && item.priceDiamonds > 0) {
-      if (user.diamonds < item.priceDiamonds) throw new Error('Insufficient Diamonds');
-      user.diamonds -= item.priceDiamonds;
-      this.recordTransaction(user, 'DIAMONDS', -item.priceDiamonds, 'PURCHASE', `Purchased ${item.id}`);
-    }
-
-    if (!user.ownedCosmetics.includes(itemId)) {
-      user.ownedCosmetics.push(itemId);
-    }
-    user.equippedCosmetics[item.category] = itemId;
-    if (!this.data.inventory.some((inv) => inv.userId === user.id && inv.productId === itemId)) {
-      this.data.inventory.unshift({
-        id: `inv_${crypto.randomBytes(5).toString('hex')}`,
-        userId: user.id,
-        productId: itemId,
-        category: item.category,
-        acquiredAt: Date.now(),
-      });
-    }
-    if (user.ownedCosmetics.length >= 3) {
-      this.unlockAchievement(user, 'fashion_collector');
-    }
-    this.addAuditLog(user.id, user.username, 'COSMETIC_PURCHASE', `Bought ${item.id}`);
-    this.save();
-    return this.sanitizeUser(user);
+  public purchaseCosmetic(_userId: string, _itemId: string): UserProfile {
+    throw new Error('Cosmetic shop purchases are permanently disabled. Please use Functional Game Shop items.');
   }
 
   public equipCosmetic(userId: string, itemId: string): UserProfile {
     const user = this.findUserById(userId);
     if (!user) throw new Error('User not found');
-    const product = this.data.shopProducts.find((c) => c.id === itemId);
+    // Only pre-owned legacy/Battle Pass/Referral cosmetics can be toggled (no new cosmetic shop purchases)
     const legacy = COSMETICS.find((c) => c.id === itemId);
-    const category = product?.category || legacy?.category;
-    if (!category) throw new Error('Cosmetic item not found');
+    const archivedProduct = this.data.shopProducts.find((c) => c.id === itemId && isLegacyCosmeticCategory(c.category));
+    const category = legacy?.category || (archivedProduct?.category as CosmeticCategory | undefined);
+    if (!category) throw new Error('Pre-owned cosmetic item not found');
     if (!user.ownedCosmetics.includes(itemId)) throw new Error('You do not own this item');
 
     const cat: CosmeticCategory = category;
@@ -1911,7 +1871,9 @@ class PersistentStore {
   }
 
   public getCategories(includeInactive = false): ProductCategory[] {
-    const list = includeInactive ? this.data.productCategories : this.data.productCategories.filter((c) => c.isActive);
+    const list = this.data.productCategories.filter(
+      (c) => isFunctionalCategory(c.slug) && (includeInactive || c.isActive)
+    );
     return [...list].sort((a, b) => a.sortOrder - b.sortOrder);
   }
 
@@ -1919,9 +1881,13 @@ class PersistentStore {
     input: Partial<ProductCategory> & { id?: string },
     actor: { id: string; username: string }
   ): ProductCategory {
+    if (input.slug && !isFunctionalCategory(input.slug)) {
+      throw new Error('Cosmetic product categories are disabled. Only functional game categories are supported.');
+    }
     const existing = input.id ? this.data.productCategories.find((c) => c.id === input.id) : undefined;
     if (existing) {
       if (input.name) existing.name = input.name;
+      if (input.description) existing.description = input.description;
       if (typeof input.isActive === 'boolean') existing.isActive = input.isActive;
       if (typeof input.sortOrder === 'number') existing.sortOrder = input.sortOrder;
       this.addAuditLog(actor.id, actor.username, 'CATEGORY_UPDATED', `Updated category ${existing.id}`);
@@ -1929,9 +1895,10 @@ class PersistentStore {
       return existing;
     }
     const created: ProductCategory = {
-      id: `cat_${crypto.randomBytes(4).toString('hex')}`,
-      slug: (input.slug || 'AVATAR') as CosmeticCategory,
+      id: `fcat_${crypto.randomBytes(4).toString('hex')}`,
+      slug: (input.slug && isFunctionalCategory(input.slug) ? input.slug : 'DOCUMENTS') as FunctionalItemCategory,
       name: input.name || { uz: 'Yangi toifa', ru: 'Новая категория' },
+      description: input.description,
       sortOrder: Number(input.sortOrder) || this.data.productCategories.length + 1,
       isActive: input.isActive ?? true,
     };
@@ -1941,8 +1908,15 @@ class PersistentStore {
     return created;
   }
 
-  public getShopProducts(includeInactive = false): ShopProduct[] {
-    return includeInactive ? this.data.shopProducts : this.data.shopProducts.filter((p) => p.isActive);
+  public getShopProducts(includeInactive = false, category?: string): ShopProduct[] {
+    let list = this.data.shopProducts.filter((p) => isFunctionalCategory(p.category));
+    if (!includeInactive) {
+      list = list.filter((p) => p.isActive && !p.isArchived);
+    }
+    if (category && category !== 'ALL') {
+      list = list.filter((p) => p.category === category);
+    }
+    return list;
   }
 
   public saveShopProduct(
@@ -1951,49 +1925,123 @@ class PersistentStore {
   ): ShopProduct {
     const now = Date.now();
     const existing = input.id ? this.data.shopProducts.find((p) => p.id === input.id) : undefined;
+    const targetCategory = input.category || existing?.category || 'DOCUMENTS';
+    if (!isFunctionalCategory(targetCategory)) {
+      throw new Error('Cosmetic shop products are permanently disabled. Select one of the 7 functional categories.');
+    }
+
     if (existing) {
-      if (input.category) existing.category = input.category;
+      existing.category = targetCategory;
       if (input.name) existing.name = input.name;
       if (input.description) existing.description = input.description;
       if (typeof input.imageUrl === 'string') existing.imageUrl = input.imageUrl;
-      if (typeof input.priceUzs === 'number') existing.priceUzs = Math.max(0, input.priceUzs);
-      if (typeof input.priceGold === 'number') existing.priceGold = input.priceGold;
-      if (typeof input.priceDiamonds === 'number') existing.priceDiamonds = input.priceDiamonds;
+      existing.priceUzs = 0;
+      if (input.priceGold !== undefined) existing.priceGold = input.priceGold ? Math.max(0, Number(input.priceGold)) : undefined;
+      if (input.priceDiamonds !== undefined) existing.priceDiamonds = input.priceDiamonds ? Math.max(0, Number(input.priceDiamonds)) : undefined;
+      if (!existing.priceGold && !existing.priceDiamonds) existing.priceGold = 250;
+      existing.currencyMode =
+        input.currencyMode === 'DIAMONDS' || (!existing.priceGold && Boolean(existing.priceDiamonds))
+          ? 'DIAMONDS'
+          : 'GOLD';
       if (input.rarity) existing.rarity = input.rarity;
       if (input.previewColor) existing.previewColor = input.previewColor;
+      if (input.itemType) existing.itemType = input.itemType;
+      if (input.effectType) existing.effectType = input.effectType;
+      if (input.effectConfig) existing.effectConfig = { ...(existing.effectConfig || {}), ...input.effectConfig };
+      if (input.usageCondition) existing.usageCondition = input.usageCondition;
+      if (typeof input.maxUsesPerItem === 'number') existing.maxUsesPerItem = input.maxUsesPerItem;
+      if (typeof input.purchaseLimitPerUser === 'number') existing.purchaseLimitPerUser = input.purchaseLimitPerUser;
+      if (typeof input.durationHours === 'number') existing.durationHours = Math.max(0, input.durationHours);
+      if (typeof input.isUnique === 'boolean') existing.isUnique = input.isUnique;
       if (typeof input.vipOnly === 'boolean') existing.vipOnly = input.vipOnly;
       if (typeof input.isActive === 'boolean') existing.isActive = input.isActive;
+      if (typeof input.isArchived === 'boolean') existing.isArchived = input.isArchived;
       existing.updatedAt = now;
-      this.addAuditLog(actor.id, actor.username, 'PRODUCT_UPDATED', `Updated product ${existing.id} (${existing.priceUzs} UZS)`);
+      this.addAuditLog(actor.id, actor.username, 'PRODUCT_UPDATED', `Updated functional product ${existing.id}`);
       this.save();
       return existing;
     }
+
+    const defaultEffectByCat: Record<FunctionalItemCategory, FunctionalEffectType> = {
+      STATISTICS_RESET: 'STATS_RESET',
+      DOCUMENTS: 'DOC_INVESTIGATE',
+      PROTECTIVE_MASK: 'MASK_STATUS_BLOCK',
+      RIFLE: 'RIFLE_NIGHT_STRIKE',
+      WHITE_KILLER_PROTECTION: 'WHITE_KILLER_SHIELD',
+      VOTING_PROTECTION: 'VOTE_PARDON_SHIELD',
+      ROLE_PURCHASE: 'ROLE_TOKEN',
+    };
+
+    const resolvedGold = input.priceGold ? Math.max(1, Number(input.priceGold)) : undefined;
+    const resolvedDiamonds = input.priceDiamonds ? Math.max(1, Number(input.priceDiamonds)) : undefined;
+    const finalGold = !resolvedGold && !resolvedDiamonds ? 300 : resolvedGold;
+    const finalMode: 'GOLD' | 'DIAMONDS' =
+      input.currencyMode === 'DIAMONDS' || (!finalGold && Boolean(resolvedDiamonds)) ? 'DIAMONDS' : 'GOLD';
+
     const created: ShopProduct = {
-      id: `prd_${crypto.randomBytes(5).toString('hex')}`,
-      category: input.category || 'AVATAR',
-      name: input.name || { uz: 'Yangi buyum', ru: 'Новый предмет' },
-      description: input.description || { uz: 'Maxsus kosmetik buyum', ru: 'Особый косметический предмет' },
-      imageUrl: input.imageUrl || '',
-      priceUzs: Math.max(1000, Number(input.priceUzs) || 10000),
-      priceGold: input.priceGold,
-      priceDiamonds: input.priceDiamonds,
+      id: `fn_${crypto.randomBytes(5).toString('hex')}`,
+      category: targetCategory,
+      name: input.name || { uz: 'Yangi funksional buyum', ru: 'Новый функциональный предмет' },
+      description: input.description || { uz: 'O‘yin ichidagi maxsus imkoniyat', ru: 'Функциональный игровой предмет' },
+      imageUrl: input.imageUrl || targetCategory.toLowerCase(),
+      priceUzs: 0,
+      priceGold: finalGold,
+      priceDiamonds: resolvedDiamonds,
+      currencyMode: finalMode,
       rarity: input.rarity || 'RARE',
       previewColor: input.previewColor || '#E7B65B',
-      isUnique: input.isUnique ?? true,
+      itemType: input.itemType || (input.effectType === 'ROLE_UNLOCK' ? 'PERMANENT_UNLOCK' : 'CONSUMABLE'),
+      effectType: input.effectType || defaultEffectByCat[targetCategory],
+      effectConfig: input.effectConfig || {
+        allowedModes: ['CLASSIC', 'ADVANCED', 'CHAOS'],
+        consumable: input.effectType !== 'ROLE_UNLOCK',
+        maxPerMatch: 1,
+      },
+      usageCondition: input.usageCondition,
+      maxUsesPerItem: typeof input.maxUsesPerItem === 'number' ? input.maxUsesPerItem : 1,
+      purchaseLimitPerUser: typeof input.purchaseLimitPerUser === 'number' ? input.purchaseLimitPerUser : 5,
+      durationHours: typeof input.durationHours === 'number' ? Math.max(0, input.durationHours) : 720,
+      isUnique: Boolean(input.isUnique),
       vipOnly: Boolean(input.vipOnly),
       isActive: input.isActive ?? true,
+      isArchived: false,
       createdAt: now,
       updatedAt: now,
     };
     this.data.shopProducts.unshift(created);
-    this.addAuditLog(actor.id, actor.username, 'PRODUCT_CREATED', `Created product ${created.id} (${created.priceUzs} UZS)`);
+    this.addAuditLog(actor.id, actor.username, 'PRODUCT_CREATED', `Created functional product ${created.id}`);
     this.save();
     return created;
   }
 
+  public archiveShopProduct(productId: string, archived: boolean, actor: { id: string; username: string }): ShopProduct {
+    const product = this.data.shopProducts.find((p) => p.id === productId);
+    if (!product) throw new Error('Product not found');
+    product.isArchived = archived;
+    if (archived) product.isActive = false;
+    product.updatedAt = Date.now();
+    this.addAuditLog(
+      actor.id,
+      actor.username,
+      archived ? 'PRODUCT_ARCHIVED' : 'PRODUCT_RESTORED',
+      `${archived ? 'Archived' : 'Restored'} product ${productId}`,
+      'WARN'
+    );
+    this.save();
+    return product;
+  }
+
   public deleteShopProduct(productId: string, actor: { id: string; username: string }): void {
+    // Soft-archive if historical orders or inventory reference exist; otherwise remove cleanly
+    const hasReferences =
+      this.data.orders.some((o) => o.referenceId === productId) ||
+      this.data.inventory.some((inv) => inv.productId === productId);
+    if (hasReferences) {
+      this.archiveShopProduct(productId, true, actor);
+      return;
+    }
     this.data.shopProducts = this.data.shopProducts.filter((p) => p.id !== productId);
-    this.addAuditLog(actor.id, actor.username, 'PRODUCT_DELETED', `Deleted product ${productId}`, 'WARN');
+    this.addAuditLog(actor.id, actor.username, 'PRODUCT_DELETED', `Deleted unused product ${productId}`, 'WARN');
     this.save();
   }
 
@@ -2033,20 +2081,702 @@ class PersistentStore {
     return created;
   }
 
+  private recordInventoryTx(
+    user: { id: string; username: string },
+    params: Omit<InventoryTransactionRecord, 'id' | 'userId' | 'username' | 'createdAt'>
+  ) {
+    this.data.inventoryTransactions.unshift({
+      id: `itx_${crypto.randomBytes(5).toString('hex')}`,
+      userId: user.id,
+      username: user.username,
+      createdAt: Date.now(),
+      ...params,
+    });
+    if (this.data.inventoryTransactions.length > 500) {
+      this.data.inventoryTransactions = this.data.inventoryTransactions.slice(0, 500);
+    }
+  }
+
+  public refreshUserInventoryExpirations(userId: string): boolean {
+    const user = this.findUserById(userId);
+    if (!user) return false;
+    const now = Date.now();
+    let changed = false;
+    for (const inv of this.data.inventory) {
+      if (
+        inv.userId === userId &&
+        inv.status !== 'EXPIRED' &&
+        inv.status !== 'CONSUMED' &&
+        inv.expiresAt &&
+        inv.expiresAt <= now
+      ) {
+        inv.status = 'EXPIRED';
+        changed = true;
+        this.recordInventoryTx(user, {
+          inventoryItemId: inv.id,
+          productId: inv.productId,
+          productName: inv.itemName?.uz || inv.productId,
+          action: 'EXPIRED',
+          quantityDelta: -(inv.quantity ?? 1),
+          usesDelta: -(inv.remainingUses ?? 0),
+          details: 'Item expired automatically after duration limit.',
+        });
+      }
+    }
+    if (changed) this.save();
+    return changed;
+  }
+
+  private countActiveUnitsOwned(userId: string, productId: string): number {
+    this.refreshUserInventoryExpirations(userId);
+    return this.data.inventory
+      .filter(
+        (inv) =>
+          inv.userId === userId &&
+          inv.productId === productId &&
+          inv.status !== 'EXPIRED' &&
+          inv.status !== 'CONSUMED' &&
+          (inv.remainingUses === undefined || inv.remainingUses === -1 || inv.remainingUses > 0)
+      )
+      .reduce((sum, inv) => sum + (inv.quantity ?? 1), 0);
+  }
+
+  private grantFunctionalProductToUser(
+    user: StoredUser,
+    product: ShopProduct,
+    opts?: { orderId?: string; sourceLabel?: string; isAdminGrant?: boolean }
+  ): InventoryItemRecord {
+    const now = Date.now();
+    this.refreshUserInventoryExpirations(user.id);
+
+    const maxUses = product.maxUsesPerItem ?? 1;
+    const expiresAt =
+      product.durationHours && product.durationHours > 0
+        ? now + product.durationHours * 3600000
+        : undefined;
+    const targetRoleId = product.effectConfig?.targetRoleId;
+
+    if (product.effectType === 'ROLE_UNLOCK' && targetRoleId) {
+      if (!user.unlockedRoles) user.unlockedRoles = [];
+      if (!user.unlockedRoles.includes(targetRoleId)) {
+        user.unlockedRoles.push(targetRoleId);
+      }
+      user.activeRolePreference = targetRoleId;
+    }
+
+    // Check if an existing stackable ACTIVE record exists for consumables (not permanent unique unlocks)
+    const existingStack =
+      !product.isUnique && product.effectType !== 'ROLE_UNLOCK'
+        ? this.data.inventory.find(
+            (inv) =>
+              inv.userId === user.id &&
+              inv.productId === product.id &&
+              inv.status === 'ACTIVE' &&
+              !inv.expiresAt === !expiresAt
+          )
+        : undefined;
+
+    if (existingStack && maxUses > 0) {
+      existingStack.quantity = (existingStack.quantity ?? 1) + 1;
+      existingStack.remainingUses = (existingStack.remainingUses ?? 1) + maxUses;
+      if (expiresAt) {
+        existingStack.expiresAt = Math.max(existingStack.expiresAt || 0, expiresAt);
+      }
+      existingStack.lastUsedAt = undefined;
+      this.recordInventoryTx(user, {
+        inventoryItemId: existingStack.id,
+        productId: product.id,
+        productName: product.name.uz,
+        action: opts?.isAdminGrant ? 'ADMIN_GRANTED' : 'PURCHASED',
+        quantityDelta: 1,
+        usesDelta: maxUses,
+        details: opts?.sourceLabel || `Added +1 charge (${product.category})`,
+      });
+      return existingStack;
+    }
+
+    const record: InventoryItemRecord = {
+      id: `inv_${crypto.randomBytes(5).toString('hex')}`,
+      userId: user.id,
+      productId: product.id,
+      category: product.category,
+      effectType: product.effectType,
+      itemName: product.name,
+      quantity: 1,
+      remainingUses: maxUses,
+      maxUsesPerItem: maxUses,
+      status: product.effectType === 'ROLE_UNLOCK' ? 'EQUIPPED' : 'ACTIVE',
+      targetRoleId,
+      orderId: opts?.orderId,
+      acquiredAt: now,
+      purchasedAt: now,
+      expiresAt,
+    };
+    this.data.inventory.unshift(record);
+    this.recordInventoryTx(user, {
+      inventoryItemId: record.id,
+      productId: product.id,
+      productName: product.name.uz,
+      action: opts?.isAdminGrant ? 'ADMIN_GRANTED' : 'PURCHASED',
+      quantityDelta: 1,
+      usesDelta: maxUses,
+      details: opts?.sourceLabel || `Purchased ${product.category}`,
+    });
+    return record;
+  }
+
+  public purchaseFunctionalProductWithCurrency(
+    userId: string,
+    productId: string,
+    currency?: 'GOLD' | 'DIAMONDS'
+  ): { user: UserProfile; inventoryItem: InventoryItemRecord } {
+    const user = this.findUserById(userId);
+    if (!user) throw new Error('User not found');
+    this.expireVipIfNeeded(user);
+
+    const product = this.data.shopProducts.find((p) => p.id === productId);
+    if (!product || product.isArchived || isLegacyCosmeticCategory(product.category)) {
+      throw new Error('This product is no longer available in the Functional Game Shop.');
+    }
+    if (!product.isActive) {
+      throw new Error('Product is currently inactive.');
+    }
+    if (product.vipOnly && (user.subscription.tier !== 'ELITE' || user.subscription.status !== 'ACTIVE')) {
+      throw new Error('Active VIP membership required for this item');
+    }
+
+    const ownedUnits = this.countActiveUnitsOwned(userId, product.id);
+    const targetRoleId = product.effectConfig?.targetRoleId;
+    if (
+      (product.isUnique || product.effectType === 'ROLE_UNLOCK') &&
+      (ownedUnits > 0 || (targetRoleId && user.unlockedRoles?.includes(targetRoleId)))
+    ) {
+      throw new Error('You already own this unique unlock.');
+    }
+    if (
+      product.purchaseLimitPerUser &&
+      product.purchaseLimitPerUser > 0 &&
+      ownedUnits >= product.purchaseLimitPerUser
+    ) {
+      throw new Error(`Purchase limit reached (max ${product.purchaseLimitPerUser} active).`);
+    }
+
+    const useDiamonds =
+      currency === 'DIAMONDS'
+        ? true
+        : currency === 'GOLD'
+          ? false
+          : !(product.priceGold && product.priceGold > 0) && Boolean(product.priceDiamonds && product.priceDiamonds > 0);
+
+    if (useDiamonds) {
+      if (!product.priceDiamonds || product.priceDiamonds <= 0) {
+        throw new Error('This item cannot be purchased with Diamonds.');
+      }
+      if (user.diamonds < product.priceDiamonds) throw new Error('Insufficient Diamonds');
+      user.diamonds -= product.priceDiamonds;
+      this.recordTransaction(user, 'DIAMONDS', -product.priceDiamonds, 'PURCHASE', `Functional Shop: ${product.name.uz}`);
+    } else {
+      if (!product.priceGold || product.priceGold <= 0) {
+        throw new Error('This item requires UZS or Diamonds payment.');
+      }
+      if (user.gold < product.priceGold) throw new Error('Insufficient Gold');
+      user.gold -= product.priceGold;
+      this.recordTransaction(user, 'GOLD', -product.priceGold, 'PURCHASE', `Functional Shop: ${product.name.uz}`);
+    }
+
+    const inventoryItem = this.grantFunctionalProductToUser(user, product, {
+      sourceLabel: `Purchased via ${useDiamonds ? 'DIAMONDS' : 'GOLD'}`,
+    });
+    this.addAuditLog(user.id, user.username, 'FUNCTIONAL_SHOP_PURCHASE', `Bought ${product.id} (${product.category})`);
+    this.save();
+    return { user: this.sanitizeUser(user), inventoryItem };
+  }
+
   public getUserInventory(userId: string) {
     const user = this.findUserById(userId);
     if (!user) throw new Error('User not found');
     this.expireVipIfNeeded(user);
-    const items = user.ownedCosmetics
-      .map((pid) => this.data.shopProducts.find((p) => p.id === pid))
-      .filter((p): p is ShopProduct => Boolean(p));
-    const records = this.data.inventory.filter((inv) => inv.userId === userId);
+    this.refreshUserInventoryExpirations(userId);
+
+    const functionalRecords = this.data.inventory
+      .filter((inv) => inv.userId === userId && isFunctionalCategory(inv.category))
+      .map((inv) => ({
+        ...inv,
+        product: this.data.shopProducts.find((p) => p.id === inv.productId),
+      }));
+
+    // Preserve pre-owned Battle Pass / referral / historical cosmetics cleanly without exposing shop buy options
+    const legacyItems = (user.ownedCosmetics || [])
+      .map((pid) => COSMETICS.find((c) => c.id === pid) || this.data.shopProducts.find((p) => p.id === pid))
+      .filter(Boolean);
+
     return {
-      items,
-      records,
+      functionalItems: functionalRecords,
+      records: functionalRecords,
+      items: legacyItems,
       equippedCosmetics: user.equippedCosmetics,
+      unlockedRoles: user.unlockedRoles || [],
+      activeRolePreference: user.activeRolePreference,
+      transactions: this.data.inventoryTransactions.filter((t) => t.userId === userId).slice(0, 60),
+      usageHistory: this.data.itemUsageHistory.filter((h) => h.userId === userId).slice(0, 60),
+      resetHistory: this.data.statisticsResetHistory.filter((r) => r.userId === userId).slice(0, 20),
       orders: this.data.orders.filter((o) => o.userId === userId),
       subscriptions: this.data.subscriptions.filter((s) => s.userId === userId),
+    };
+  }
+
+  public useStatisticsResetItem(
+    userId: string,
+    inventoryItemId: string,
+    options?: { confirmed?: boolean; fields?: string[] }
+  ): { user: UserProfile; resetRecord: StatisticsResetRecord } {
+    if (!options?.confirmed) {
+      throw new Error('Explicit confirmation is required before resetting player statistics.');
+    }
+    const user = this.findUserById(userId);
+    if (!user) throw new Error('User not found');
+    this.refreshUserInventoryExpirations(userId);
+
+    const inv = this.data.inventory.find(
+      (i) => i.id === inventoryItemId && i.userId === userId && i.category === 'STATISTICS_RESET'
+    );
+    if (!inv || inv.status === 'CONSUMED' || inv.status === 'EXPIRED' || (inv.remainingUses ?? 0) <= 0) {
+      throw new Error('No active Statistics Reset item found.');
+    }
+
+    const allowedFields = new Set([
+      'wins',
+      'losses',
+      'draws',
+      'totalGames',
+      'winStreak',
+      'bestWinStreak',
+      'rolePlayCounts',
+      'modePlayCounts',
+    ]);
+    const fieldsToReset =
+      options.fields && options.fields.length > 0
+        ? options.fields.filter((f) => allowedFields.has(f))
+        : Array.from(allowedFields);
+
+    if (fieldsToReset.length === 0) {
+      throw new Error('No valid public statistics fields selected.');
+    }
+
+    const previousSnapshot = {
+      totalGames: user.totalGames,
+      wins: user.wins,
+      losses: user.losses,
+      draws: user.draws ?? 0,
+      winStreak: user.winStreak,
+      bestWinStreak: user.bestWinStreak,
+    };
+
+    // CRITICAL: Reset ONLY public stats. NEVER reset ELO rating, highestRating, modeRatings, history, orders, payments, or moderation records!
+    if (fieldsToReset.includes('wins')) {
+      user.wins = 0;
+      user.weeklyWins = 0;
+      user.monthlyWins = 0;
+    }
+    if (fieldsToReset.includes('losses')) user.losses = 0;
+    if (fieldsToReset.includes('draws')) user.draws = 0;
+    if (fieldsToReset.includes('totalGames')) user.totalGames = 0;
+    if (fieldsToReset.includes('winStreak')) user.winStreak = 0;
+    if (fieldsToReset.includes('bestWinStreak')) user.bestWinStreak = 0;
+    if (fieldsToReset.includes('rolePlayCounts')) {
+      user.rolePlayCounts = {};
+      user.favoriteRole = undefined;
+    }
+    if (fieldsToReset.includes('modePlayCounts')) {
+      user.modePlayCounts = {};
+      user.favoriteMode = undefined;
+    }
+
+    // Consume 1 unit of the Statistics Reset item
+    inv.remainingUses = Math.max(0, (inv.remainingUses ?? 1) - 1);
+    inv.quantity = Math.max(0, (inv.quantity ?? 1) - 1);
+    inv.lastUsedAt = Date.now();
+    if (inv.remainingUses <= 0) {
+      inv.status = 'CONSUMED';
+    }
+
+    const resetRecord: StatisticsResetRecord = {
+      id: `rst_${crypto.randomBytes(5).toString('hex')}`,
+      userId: user.id,
+      username: user.username,
+      inventoryItemId: inv.id,
+      resetFields: fieldsToReset,
+      previousSnapshot,
+      preservedEloRating: user.rating,
+      createdAt: Date.now(),
+    };
+    this.data.statisticsResetHistory.unshift(resetRecord);
+
+    this.recordInventoryTx(user, {
+      inventoryItemId: inv.id,
+      productId: inv.productId,
+      productName: inv.itemName?.uz || 'Statistikani tiklash',
+      action: 'STATISTICS_RESET',
+      quantityDelta: -1,
+      usesDelta: -1,
+      details: `Reset [${fieldsToReset.join(', ')}]; ELO preserved at ${user.rating}`,
+    });
+
+    this.data.itemUsageHistory.unshift({
+      id: `use_${crypto.randomBytes(5).toString('hex')}`,
+      userId: user.id,
+      username: user.username,
+      inventoryItemId: inv.id,
+      productId: inv.productId,
+      category: 'STATISTICS_RESET',
+      effectType: 'STATS_RESET',
+      outcome: `Public statistics reset (${fieldsToReset.join(', ')}); ELO ${user.rating} & orders preserved`,
+      createdAt: Date.now(),
+    });
+
+    this.addAuditLog(
+      user.id,
+      user.username,
+      'STATISTICS_RESET',
+      `User reset public stats [${fieldsToReset.join(', ')}]; previous W/L=${previousSnapshot.wins}/${previousSnapshot.losses}; ELO preserved at ${user.rating}`,
+      'WARN'
+    );
+    this.save();
+    return { user: this.sanitizeUser(user), resetRecord };
+  }
+
+  public getEligibleRolesForUser(userId: string, mode?: GameMode) {
+    const user = this.findUserById(userId);
+    if (!user) throw new Error('User not found');
+    this.refreshUserInventoryExpirations(userId);
+
+    const unlocked = new Set<RoleId>(user.unlockedRoles || []);
+    const activeTokens = this.data.inventory.filter(
+      (inv) =>
+        inv.userId === userId &&
+        inv.category === 'ROLE_PURCHASE' &&
+        inv.effectType === 'ROLE_TOKEN' &&
+        inv.status === 'ACTIVE' &&
+        (inv.remainingUses ?? 0) > 0 &&
+        inv.targetRoleId
+    );
+
+    const eligible: {
+      roleId: RoleId;
+      source: 'UNLOCK' | 'TOKEN';
+      inventoryItemId?: string;
+      remainingUses: number;
+      compatibleModes: GameMode[];
+      selected: boolean;
+    }[] = [];
+
+    for (const rId of unlocked) {
+      const roleDef = ROLES[rId];
+      if (!roleDef) continue;
+      if (mode && !roleDef.modes.includes(mode)) continue;
+      const unlockInv = this.data.inventory.find(
+        (i) => i.userId === userId && i.effectType === 'ROLE_UNLOCK' && i.targetRoleId === rId
+      );
+      eligible.push({
+        roleId: rId,
+        source: 'UNLOCK',
+        inventoryItemId: unlockInv?.id,
+        remainingUses: -1,
+        compatibleModes: roleDef.modes,
+        selected: user.activeRolePreference === rId,
+      });
+    }
+
+    for (const tok of activeTokens) {
+      const rId = tok.targetRoleId!;
+      const roleDef = ROLES[rId];
+      if (!roleDef) continue;
+      const prod = this.data.shopProducts.find((p) => p.id === tok.productId);
+      const allowedModes = prod?.effectConfig?.allowedModes || roleDef.modes;
+      if (mode && !allowedModes.includes(mode)) continue;
+      if (!unlocked.has(rId)) {
+        eligible.push({
+          roleId: rId,
+          source: 'TOKEN',
+          inventoryItemId: tok.id,
+          remainingUses: tok.remainingUses ?? 1,
+          compatibleModes: allowedModes.filter((m) => roleDef.modes.includes(m)),
+          selected: user.activeRolePreference === rId,
+        });
+      }
+    }
+
+    return eligible;
+  }
+
+  public activateRolePreference(userId: string, roleId: RoleId | null): UserProfile {
+    const user = this.findUserById(userId);
+    if (!user) throw new Error('User not found');
+    if (!roleId) {
+      user.activeRolePreference = undefined;
+      this.save();
+      return this.sanitizeUser(user);
+    }
+    const eligible = this.getEligibleRolesForUser(userId);
+    const match = eligible.find((e) => e.roleId === roleId);
+    if (!match) {
+      throw new Error('You do not own an unlock or active role token for this role.');
+    }
+    user.activeRolePreference = roleId;
+    this.save();
+    return this.sanitizeUser(user);
+  }
+
+  public validateRoleSelectionForLobby(
+    userId: string,
+    desiredRoleId: RoleId | undefined,
+    mode: GameMode,
+    playerCount: number
+  ): { valid: boolean; source?: 'UNLOCK' | 'TOKEN'; inventoryItemId?: string; error?: string } {
+    if (!desiredRoleId) return { valid: true };
+    const user = this.findUserById(userId);
+    if (!user) return { valid: false, error: 'Authentication required to select a purchased role.' };
+    const roleDef = ROLES[desiredRoleId];
+    if (!roleDef) return { valid: false, error: 'Invalid role selected.' };
+    if (!roleDef.modes.includes(mode)) {
+      return { valid: false, error: `${roleDef.name.uz} is not available in ${mode} mode.` };
+    }
+    if (playerCount > 0 && playerCount < roleDef.minPlayers) {
+      return { valid: false, error: `${roleDef.name.uz} requires at least ${roleDef.minPlayers} players.` };
+    }
+    const eligible = this.getEligibleRolesForUser(userId, mode);
+    const entry = eligible.find((e) => e.roleId === desiredRoleId);
+    if (!entry) {
+      return { valid: false, error: 'You do not own a valid role unlock or token for this role.' };
+    }
+    return { valid: true, source: entry.source, inventoryItemId: entry.inventoryItemId };
+  }
+
+  public consumeRolePreferenceForMatch(
+    userId: string,
+    assignedRoleId: RoleId,
+    roomCode: string,
+    matchId?: string
+  ): void {
+    const user = this.findUserById(userId);
+    if (!user) return;
+    this.refreshUserInventoryExpirations(userId);
+
+    const isUnlocked = user.unlockedRoles?.includes(assignedRoleId);
+    if (isUnlocked) {
+      const unlockInv = this.data.inventory.find(
+        (i) => i.userId === userId && i.effectType === 'ROLE_UNLOCK' && i.targetRoleId === assignedRoleId
+      );
+      this.data.itemUsageHistory.unshift({
+        id: `use_${crypto.randomBytes(5).toString('hex')}`,
+        userId: user.id,
+        username: user.username,
+        inventoryItemId: unlockInv?.id || 'unlock',
+        productId: unlockInv?.productId || 'role_unlock',
+        category: 'ROLE_PURCHASE',
+        effectType: 'ROLE_UNLOCK',
+        roomCode,
+        matchId,
+        outcome: `Role preference applied permanently: ${assignedRoleId}`,
+        createdAt: Date.now(),
+      });
+      this.save();
+      return;
+    }
+
+    const token = this.data.inventory.find(
+      (i) =>
+        i.userId === userId &&
+        i.category === 'ROLE_PURCHASE' &&
+        i.effectType === 'ROLE_TOKEN' &&
+        i.targetRoleId === assignedRoleId &&
+        i.status === 'ACTIVE' &&
+        (i.remainingUses ?? 0) > 0
+    );
+    if (!token) return;
+
+    token.remainingUses = Math.max(0, (token.remainingUses ?? 1) - 1);
+    token.quantity = Math.max(0, (token.quantity ?? 1) - 1);
+    token.lastUsedAt = Date.now();
+    if (token.remainingUses <= 0) {
+      token.status = 'CONSUMED';
+    }
+    if (user.activeRolePreference === assignedRoleId && token.status === 'CONSUMED') {
+      user.activeRolePreference = undefined;
+    }
+
+    this.recordInventoryTx(user, {
+      inventoryItemId: token.id,
+      productId: token.productId,
+      productName: token.itemName?.uz || assignedRoleId,
+      action: 'CONSUMED',
+      quantityDelta: -1,
+      usesDelta: -1,
+      roomCode,
+      matchId,
+      details: `Consumed Role Token for ${assignedRoleId} on match start`,
+    });
+    this.data.itemUsageHistory.unshift({
+      id: `use_${crypto.randomBytes(5).toString('hex')}`,
+      userId: user.id,
+      username: user.username,
+      inventoryItemId: token.id,
+      productId: token.productId,
+      category: 'ROLE_PURCHASE',
+      effectType: 'ROLE_TOKEN',
+      roomCode,
+      matchId,
+      outcome: `Used Role Token for ${assignedRoleId}`,
+      createdAt: Date.now(),
+    });
+    this.save();
+  }
+
+  public validateAndConsumeInGameItem(
+    userId: string,
+    inventoryItemId: string,
+    context: {
+      roomCode: string;
+      mode: GameMode;
+      phase: GamePhase;
+      round: number;
+      usedItemCountsInMatch: Record<string, number>;
+      targetId?: string;
+      targetName?: string;
+      outcome?: string;
+    }
+  ): {
+    valid: boolean;
+    error?: string;
+    item?: InventoryItemRecord;
+    product?: ShopProduct;
+  } {
+    const user = this.findUserById(userId);
+    if (!user) return { valid: false, error: 'Registered account required to use shop items.' };
+    this.refreshUserInventoryExpirations(userId);
+
+    const inv = this.data.inventory.find((i) => i.id === inventoryItemId && i.userId === userId);
+    if (!inv) return { valid: false, error: 'Inventory item not found.' };
+    if (inv.status === 'EXPIRED' || (inv.expiresAt && inv.expiresAt <= Date.now())) {
+      return { valid: false, error: 'This item has expired.' };
+    }
+    if (inv.status === 'CONSUMED' || (inv.remainingUses ?? 0) <= 0) {
+      return { valid: false, error: 'No uses remaining for this item.' };
+    }
+
+    const product = this.data.shopProducts.find((p) => p.id === inv.productId);
+    if (!product || isLegacyCosmeticCategory(inv.category)) {
+      return { valid: false, error: 'Invalid or disabled item category.' };
+    }
+    if (['STATISTICS_RESET', 'ROLE_PURCHASE'].includes(inv.category)) {
+      return { valid: false, error: 'This item is used outside of active round gameplay.' };
+    }
+
+    const cfg = product.effectConfig || {};
+    if (cfg.allowedModes && !cfg.allowedModes.includes(context.mode)) {
+      return { valid: false, error: `Not allowed in ${context.mode} mode.` };
+    }
+    if (cfg.allowedPhases && !cfg.allowedPhases.includes(context.phase)) {
+      return { valid: false, error: `Cannot use during ${context.phase} phase.` };
+    }
+    const maxPerMatch = cfg.maxPerMatch ?? 1;
+    const usedInMatch = context.usedItemCountsInMatch[inv.category] || context.usedItemCountsInMatch[inv.productId] || 0;
+    if (maxPerMatch > 0 && usedInMatch >= maxPerMatch) {
+      return { valid: false, error: `Maximum ${maxPerMatch} use(s) per match reached for this item.` };
+    }
+    if (cfg.requiresTarget && !context.targetId) {
+      return { valid: false, error: 'A valid alive target player is required.' };
+    }
+
+    // Deduct 1 charge upon validated activation so double-spending across parallel sockets is impossible
+    inv.remainingUses = Math.max(0, (inv.remainingUses ?? 1) - 1);
+    inv.quantity = Math.max(0, (inv.quantity ?? 1) - 1);
+    inv.lastUsedAt = Date.now();
+    if (inv.remainingUses <= 0) {
+      inv.status = 'CONSUMED';
+    }
+
+    this.recordInventoryTx(user, {
+      inventoryItemId: inv.id,
+      productId: inv.productId,
+      productName: product.name.uz,
+      action: 'CONSUMED',
+      quantityDelta: -1,
+      usesDelta: -1,
+      roomCode: context.roomCode,
+      details: `Activated ${inv.effectType || inv.category} at Round ${context.round} (${context.phase})`,
+    });
+
+    this.data.itemUsageHistory.unshift({
+      id: `use_${crypto.randomBytes(5).toString('hex')}`,
+      userId: user.id,
+      username: user.username,
+      inventoryItemId: inv.id,
+      productId: inv.productId,
+      category: inv.category as FunctionalItemCategory,
+      effectType: (inv.effectType || product.effectType || 'DOC_IDENTITY') as FunctionalEffectType,
+      roomCode: context.roomCode,
+      round: context.round,
+      phase: context.phase,
+      targetId: context.targetId,
+      targetName: context.targetName,
+      outcome: context.outcome || `Activated in ${context.roomCode} (${context.phase})`,
+      createdAt: Date.now(),
+    });
+    if (this.data.itemUsageHistory.length > 500) {
+      this.data.itemUsageHistory = this.data.itemUsageHistory.slice(0, 500);
+    }
+
+    this.save();
+    return { valid: true, item: inv, product };
+  }
+
+  public getShopAnalytics() {
+    const functionalProductMap = new Map<
+      string,
+      {
+        productId: string;
+        name: Record<'uz' | 'ru', string>;
+        category: string;
+        totalSold: number;
+        activeOwned: number;
+        totalConsumed: number;
+      }
+    >();
+    for (const p of this.data.shopProducts) {
+      if (!isFunctionalCategory(p.category)) continue;
+      functionalProductMap.set(p.id, {
+        productId: p.id,
+        name: p.name,
+        category: p.category,
+        totalSold: 0,
+        activeOwned: 0,
+        totalConsumed: 0,
+      });
+    }
+    for (const tx of this.data.inventoryTransactions) {
+      const entry = functionalProductMap.get(tx.productId);
+      if (!entry) continue;
+      if (tx.action === 'PURCHASED' || tx.action === 'ADMIN_GRANTED') entry.totalSold += 1;
+      if (tx.action === 'CONSUMED' || tx.action === 'STATISTICS_RESET') entry.totalConsumed += 1;
+    }
+    let activeInventoryItems = 0;
+    for (const inv of this.data.inventory) {
+      if (!isFunctionalCategory(inv.category)) continue;
+      if (inv.status !== 'CONSUMED' && inv.status !== 'EXPIRED') {
+        activeInventoryItems += inv.quantity ?? 1;
+        const entry = functionalProductMap.get(inv.productId);
+        if (entry) entry.activeOwned += inv.quantity ?? 1;
+      }
+    }
+    return {
+      totalFunctionalOrders: this.data.orders.filter((o) => o.orderType === 'SHOP_PRODUCT' && o.status === 'PAID').length,
+      totalFunctionalPurchases: this.data.inventoryTransactions.filter((t) => t.action === 'PURCHASED').length,
+      totalItemUsages: this.data.itemUsageHistory.length,
+      totalStatsResets: this.data.statisticsResetHistory.length,
+      activeInventoryItems,
+      productStats: Array.from(functionalProductMap.values()).sort((a, b) => b.totalSold - a.totalSold),
+      recentUsageHistory: this.data.itemUsageHistory.slice(0, 30),
     };
   }
 
@@ -2072,10 +2802,30 @@ class PersistentStore {
       baseAmount = plan.priceUzs;
       itemName = plan.name.uz;
     } else {
-      const product = this.data.shopProducts.find((p) => p.id === params.referenceId && p.isActive);
-      if (!product) throw new Error('Product not found');
-      if (product.isUnique && user.ownedCosmetics.includes(product.id)) {
+      const product = this.data.shopProducts.find((p) => p.id === params.referenceId);
+      if (!product || !product.isActive || product.isArchived || isLegacyCosmeticCategory(product.category)) {
+        throw new Error('This product is disabled or no longer available in the Shop.');
+      }
+      if (product.priceUzs <= 0 || product.currencyMode === 'GOLD' || product.currencyMode === 'DIAMONDS') {
+        throw new Error('Functional game items are only sold for in-game currency (Gold or Diamonds), not UZS.');
+      }
+      if (product.vipOnly && (user.subscription.tier !== 'ELITE' || user.subscription.status !== 'ACTIVE')) {
+        throw new Error('Active VIP membership required for this item');
+      }
+      const ownedUnits = this.countActiveUnitsOwned(userId, product.id);
+      const targetRoleId = product.effectConfig?.targetRoleId;
+      if (
+        (product.isUnique || product.effectType === 'ROLE_UNLOCK') &&
+        (ownedUnits > 0 || (targetRoleId && user.unlockedRoles?.includes(targetRoleId)))
+      ) {
         throw new Error('You already own this unique item');
+      }
+      if (
+        product.purchaseLimitPerUser &&
+        product.purchaseLimitPerUser > 0 &&
+        ownedUnits >= product.purchaseLimitPerUser
+      ) {
+        throw new Error(`Purchase limit reached (max ${product.purchaseLimitPerUser})`);
       }
       baseAmount = product.priceUzs;
       itemName = product.name.uz;
@@ -2228,24 +2978,11 @@ class PersistentStore {
       });
     } else {
       const product = this.data.shopProducts.find((p) => p.id === order.referenceId);
-      if (product) {
-        if (!user.ownedCosmetics.includes(product.id)) {
-          user.ownedCosmetics.push(product.id);
-        }
-        user.equippedCosmetics[product.category] = product.id;
-        if (!this.data.inventory.some((inv) => inv.userId === user.id && inv.productId === product.id)) {
-          this.data.inventory.unshift({
-            id: `inv_${crypto.randomBytes(5).toString('hex')}`,
-            userId: user.id,
-            productId: product.id,
-            category: product.category,
-            orderId: order.id,
-            acquiredAt: now,
-          });
-        }
-        if (user.ownedCosmetics.length >= 3) {
-          this.unlockAchievement(user, 'fashion_collector');
-        }
+      if (product && isFunctionalCategory(product.category)) {
+        this.grantFunctionalProductToUser(user, product, {
+          orderId: order.id,
+          sourceLabel: `Paid order ${order.id} via ${params.provider}`,
+        });
       }
     }
 
@@ -2293,13 +3030,36 @@ class PersistentStore {
             if (sub.orderId === order.id) sub.status = 'REFUNDED';
           }
         } else {
+          // Reverse functional item or legacy item
+          const invEntries = this.data.inventory.filter(
+            (inv) => inv.userId === user.id && (inv.orderId === order.id || inv.productId === order.referenceId)
+          );
+          for (const inv of invEntries) {
+            if (inv.effectType === 'ROLE_UNLOCK' && inv.targetRoleId && user.unlockedRoles) {
+              user.unlockedRoles = user.unlockedRoles.filter((r) => r !== inv.targetRoleId);
+              if (user.activeRolePreference === inv.targetRoleId) {
+                user.activeRolePreference = undefined;
+              }
+            }
+            if (isFunctionalCategory(inv.category)) {
+              inv.status = 'CONSUMED';
+              inv.remainingUses = 0;
+              inv.quantity = 0;
+              this.recordInventoryTx(user, {
+                inventoryItemId: inv.id,
+                productId: inv.productId,
+                productName: inv.itemName?.uz || order.itemName,
+                action: 'REFUNDED',
+                quantityDelta: -1,
+                usesDelta: -1,
+                details: `Refunded order ${order.id}`,
+              });
+            }
+          }
           user.ownedCosmetics = user.ownedCosmetics.filter((id) => id !== order.referenceId);
           for (const [cat, pid] of Object.entries(user.equippedCosmetics)) {
             if (pid === order.referenceId) delete user.equippedCosmetics[cat as CosmeticCategory];
           }
-          this.data.inventory = this.data.inventory.filter(
-            (inv) => !(inv.userId === user.id && inv.productId === order.referenceId)
-          );
         }
       }
       this.addAuditLog(actor.id, actor.username, 'REFUND_APPROVED', `Refunded order ${order.id} (${order.amountUzs} UZS)`, 'CRITICAL');
@@ -2540,6 +3300,58 @@ class PersistentStore {
     this.addAuditLog(actor.id, actor.username, 'ROLE_CONFIG_CREATED', `Configured role ${created.roleId}`);
     this.save();
     return created;
+  }
+
+  private cleanupCustomRoleUpload(imageUrl?: string) {
+    if (!imageUrl || !imageUrl.startsWith('/uploads/roles/')) return;
+    const filename = path.basename(imageUrl);
+    if (!filename) return;
+    const targetPath = path.join(DATA_DIR, 'uploads', 'roles', filename);
+    try {
+      if (fs.existsSync(targetPath)) {
+        fs.unlinkSync(targetPath);
+      }
+    } catch {
+      // ignore cleanup error
+    }
+  }
+
+  public setRoleImage(
+    roleId: RoleId,
+    imageUrl: string,
+    actor: { id: string; username: string }
+  ): RoleConfigOverride {
+    if (!ROLES[roleId]) throw new Error('Invalid roleId');
+    const existing = this.data.roleConfigs.find((r) => r.roleId === roleId);
+    const oldUrl = existing?.imageUrl;
+    const saved = this.saveRoleConfig({ roleId, imageUrl: imageUrl.trim() }, actor);
+    if (oldUrl && oldUrl !== saved.imageUrl) {
+      this.cleanupCustomRoleUpload(oldUrl);
+    }
+    return saved;
+  }
+
+  public removeRoleImage(
+    roleId: RoleId,
+    actor: { id: string; username: string }
+  ): RoleConfigOverride {
+    if (!ROLES[roleId]) throw new Error('Invalid roleId');
+    const existing = this.data.roleConfigs.find((r) => r.roleId === roleId);
+    const oldUrl = existing?.imageUrl;
+    const saved = this.saveRoleConfig({ roleId, imageUrl: '' }, actor);
+    this.cleanupCustomRoleUpload(oldUrl);
+    this.addAuditLog(actor.id, actor.username, 'ROLE_IMAGE_REMOVED', `Removed portrait for role ${roleId}`, 'WARN');
+    this.save();
+    return saved;
+  }
+
+  public restoreDefaultRoleImage(
+    roleId: RoleId,
+    actor: { id: string; username: string }
+  ): RoleConfigOverride {
+    const role = ROLES[roleId];
+    if (!role) throw new Error('Invalid roleId');
+    return this.setRoleImage(roleId, role.imageUrl, actor);
   }
 
   public getWebsiteSettings(): WebsiteSettings {

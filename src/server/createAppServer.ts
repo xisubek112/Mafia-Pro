@@ -1,4 +1,6 @@
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import express, { NextFunction, Request, Response } from 'express';
 import http from 'http';
 import { Server as SocketIOServer, Socket } from 'socket.io';
@@ -37,7 +39,9 @@ import {
   removeRoomFromPostgres,
   syncRoomToPostgres,
 } from './db';
-import { COSMETICS, DAILY_REWARD_CALENDAR, MISSIONS } from '../shared/ecosystem';
+import { DAILY_REWARD_CALENDAR, MISSIONS } from '../shared/ecosystem';
+import { isLegacyCosmeticCategory } from '../shared/functionalShop';
+import { ROLES } from '../shared/roles';
 import { createSessionToken, store, verifySessionToken } from './store';
 
 export type VoiceChannel = 'PUBLIC' | 'MAFIA' | 'DEAD' | 'MUTED';
@@ -53,7 +57,11 @@ export function getAllowedVoiceChannel(room: InternalRoomState, player: PlayerSt
 
 export function createAppServer(options?: { corsOrigin?: string }) {
   const app = express();
-  app.use(express.json({ limit: '3mb' }));
+  app.use(express.json({ limit: '5mb' }));
+
+  const roleUploadDir = path.resolve(process.cwd(), 'data', 'uploads', 'roles');
+  fs.mkdirSync(roleUploadDir, { recursive: true });
+  app.use('/uploads/roles', express.static(roleUploadDir, { maxAge: '7d' }));
 
   const corsOrigin = options?.corsOrigin || process.env.CORS_ORIGIN || '*';
 
@@ -268,18 +276,17 @@ export function createAppServer(options?: { corsOrigin?: string }) {
   });
 
   app.get('/api/store', (_req, res) => {
-    res.json({ items: COSMETICS });
+    res.json({
+      deprecated: true,
+      categories: store.getCategories(false),
+      items: store.getShopProducts(false),
+    });
   });
 
-  app.post('/api/store/buy', requireAuth, rateLimit(15, 60000), (req, res) => {
-    try {
-      const user = (req as Request & { user: UserProfile }).user;
-      const { itemId } = req.body || {};
-      const updated = store.purchaseCosmetic(user.id, String(itemId));
-      res.json({ user: updated });
-    } catch (err: unknown) {
-      res.status(400).json({ error: err instanceof Error ? err.message : 'Purchase failed' });
-    }
+  app.post('/api/store/buy', requireAuth, rateLimit(15, 60000), (_req, res) => {
+    return res.status(410).json({
+      error: 'Cosmetic shop purchases have been permanently disabled. Functional game items are available in /api/shop/catalog.',
+    });
   });
 
   app.post('/api/store/equip', requireAuth, (req, res) => {
@@ -330,14 +337,58 @@ export function createAppServer(options?: { corsOrigin?: string }) {
     res.json({ plans: store.getVipPlans(false) });
   });
 
-  app.get('/api/shop/catalog', (_req, res) => {
+  app.get('/api/shop/catalog', (req, res) => {
+    const category = typeof req.query.category === 'string' ? req.query.category : undefined;
     res.json({
       categories: store.getCategories(false),
-      products: store.getShopProducts(false),
+      products: store.getShopProducts(false, category),
       vipPlans: store.getVipPlans(false),
       campaigns: store.getCampaigns(false),
       paymentMode: process.env.PAYMENT_MODE || 'sandbox',
     });
+  });
+
+  app.post('/api/shop/purchase', requireAuth, rateLimit(20, 60000), (req, res) => {
+    try {
+      const user = (req as Request & { user: UserProfile }).user;
+      const { productId, currency } = req.body || {};
+      if (!productId) {
+        return res.status(400).json({ error: 'productId is required.' });
+      }
+      const normalizedCurrency = currency === 'DIAMONDS' ? 'DIAMONDS' : currency === 'GOLD' ? 'GOLD' : undefined;
+      const result = store.purchaseFunctionalProductWithCurrency(user.id, String(productId), normalizedCurrency);
+      res.json(result);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Purchase failed';
+      const status = msg.includes('disabled') || msg.includes('no longer available') ? 403 : 400;
+      res.status(status).json({ error: msg });
+    }
+  });
+
+  app.get('/api/shop/eligible-roles', requireAuth, (req, res) => {
+    try {
+      const user = (req as Request & { user: UserProfile }).user;
+      const rawMode = typeof req.query.mode === 'string' ? req.query.mode : undefined;
+      const mode = rawMode && ['CLASSIC', 'ADVANCED', 'CHAOS'].includes(rawMode) ? (rawMode as GameMode) : undefined;
+      res.json({
+        roles: store.getEligibleRolesForUser(user.id, mode),
+        activeRolePreference: user.activeRolePreference,
+        unlockedRoles: user.unlockedRoles || [],
+      });
+    } catch (err: unknown) {
+      res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to load eligible roles' });
+    }
+  });
+
+  app.post('/api/shop/role-preference', requireAuth, (req, res) => {
+    try {
+      const user = (req as Request & { user: UserProfile }).user;
+      const roleId = req.body?.roleId ? (String(req.body.roleId) as RoleId) : null;
+      const updated = store.activateRolePreference(user.id, roleId);
+      res.json({ user: updated });
+    } catch (err: unknown) {
+      res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to update role preference' });
+    }
   });
 
   app.get('/api/inventory', requireAuth, (req, res) => {
@@ -346,6 +397,27 @@ export function createAppServer(options?: { corsOrigin?: string }) {
       res.json(store.getUserInventory(user.id));
     } catch (err: unknown) {
       res.status(400).json({ error: err instanceof Error ? err.message : 'Failed to load inventory' });
+    }
+  });
+
+  app.post('/api/inventory/use', requireAuth, rateLimit(15, 60000), (req, res) => {
+    try {
+      const user = (req as Request & { user: UserProfile }).user;
+      const { inventoryItemId, action, confirmed, fields, roleId } = req.body || {};
+      if (action === 'ACTIVATE_ROLE' || roleId !== undefined) {
+        const updated = store.activateRolePreference(user.id, roleId ? (String(roleId) as RoleId) : null);
+        return res.json({ user: updated });
+      }
+      if (!inventoryItemId) {
+        return res.status(400).json({ error: 'inventoryItemId is required.' });
+      }
+      const result = store.useStatisticsResetItem(user.id, String(inventoryItemId), {
+        confirmed: Boolean(confirmed),
+        fields: Array.isArray(fields) ? fields.map(String) : undefined,
+      });
+      res.json(result);
+    } catch (err: unknown) {
+      res.status(400).json({ error: err instanceof Error ? err.message : 'Item activation failed' });
     }
   });
 
@@ -387,7 +459,9 @@ export function createAppServer(options?: { corsOrigin?: string }) {
       });
       res.json({ ...result, paymentMode: process.env.PAYMENT_MODE || 'sandbox' });
     } catch (err: unknown) {
-      res.status(400).json({ error: err instanceof Error ? err.message : 'Order creation failed' });
+      const msg = err instanceof Error ? err.message : 'Order creation failed';
+      const status = msg.includes('disabled') || msg.includes('no longer available') ? 403 : 400;
+      res.status(status).json({ error: msg });
     }
   });
 
@@ -870,26 +944,76 @@ export function createAppServer(options?: { corsOrigin?: string }) {
 
   app.post('/api/support/ai-chat', rateLimit(20, 60000), async (req, res) => {
     try {
-      const { message, lang = 'uz' } = req.body || {};
+      const { message, lang = 'uz', history } = req.body || {};
       const cleanMsg = String(message || '').trim().slice(0, 1000);
       if (!cleanMsg) return res.status(400).json({ error: 'Message required' });
 
-      const geminiApiKey = process.env.GEMINI_API_KEY;
+      const targetLang = lang === 'ru' ? 'ru' : 'uz';
+      const geminiApiKey = process.env.GEMINI_API_KEY?.trim();
       let reply = '';
 
       if (geminiApiKey) {
         try {
-          const aiClient = new GoogleGenAI();
+          const aiClient = new GoogleGenAI({
+            apiKey: geminiApiKey,
+            httpOptions: {
+              headers: {
+                'User-Agent': 'aistudio-build',
+              },
+            },
+          });
+
+          const kbContext = store
+            .getAiKnowledgeArticles()
+            .slice(0, 6)
+            .map((a) => `- ${a.title[targetLang]}: ${a.content[targetLang].slice(0, 220)}`)
+            .join('\n');
+
+          const systemInstruction = [
+            'You are DON AI, the official tactical advisor and gaming assistant of MAFIA PRO.',
+            'Identity rule: Always identify yourself strictly as "DON AI" (MAFIA PRO tactical assistant). Never refer to yourself as Gemini or Google.',
+            `Language rule: Respond clearly, concisely, and helpfully strictly in ${targetLang === 'uz' ? "Uzbek (O'zbek tili, lotin alifbosida)" : 'Russian (на русском языке)'}.`,
+            'Platform facts:',
+            '- MAFIA PRO has 18+ roles across Mafia (Don, Mafia, Consigliere, Silencer, Framer, Poisoner, Janitor), Town (Sheriff, Doctor, Detective, Bodyguard, Vigilante, Priest, Mayor, Hacker, Citizen, etc.), and Neutral (White Killer, Maniac, Jester, Arsonist).',
+            '- Functional Shop has 7 tactical categories (Statistics Reset, Documents, Protective Mask, Rifle, White Killer Protection, Voting Protection, Active Role Purchase) and ALL functional items are sold strictly for in-game currency (Gold / Oltin and Diamonds / Olmos), NOT UZS.',
+            '- VIP Membership plans (Monthly, Quarterly, Yearly) are billed in UZS (Payme/Click/Sandbox) and grant cosmetics, VIP badges, profile frames, advanced stats, and ad-free experience without unfair gameplay pay-to-win.',
+            '- If a player asks about account bans, appeals, or UZS payment refunds, instruct them to open an official ticket in the "Admin Chiptasi / Тикет в поддержку" tab.',
+            kbContext ? `Official Knowledge Base excerpts:\n${kbContext}` : '',
+          ]
+            .filter(Boolean)
+            .join('\n');
+
+          const validHistory = Array.isArray(history)
+            ? history
+                .slice(-6)
+                .filter(
+                  (h): h is { sender: 'ai' | 'user'; text: string } =>
+                    Boolean(h) &&
+                    (h.sender === 'ai' || h.sender === 'user') &&
+                    typeof h.text === 'string' &&
+                    h.text.trim().length > 0,
+                )
+                .map((h) => ({
+                  role: (h.sender === 'user' ? 'user' : 'model') as 'user' | 'model',
+                  parts: [{ text: h.text.trim().slice(0, 600) }],
+                }))
+            : [];
+
+          const contents =
+            validHistory.length > 0
+              ? [...validHistory, { role: 'user' as const, parts: [{ text: cleanMsg }] }]
+              : cleanMsg;
+
           const response = await aiClient.models.generateContent({
-            model: 'gemini-3.8-flash',
-            contents: cleanMsg,
+            model: 'gemini-4-hydrogen',
+            contents,
             config: {
-              systemInstruction: `You are the official MAFIA PRO AI Gaming Assistant. You explain rules, roles, VIP benefits, clans, tournaments, economy, and matchmaking for the MAFIA PRO platform. Respond helpfully and concisely in ${lang === 'uz' ? "O'zbek tilida" : "на русском языке"}. Base your answers on official MAFIA PRO rules and mechanics. If a user asks about account bans or payments refunds, kindly guide them to create an official support ticket in the Support tab.`,
+              systemInstruction,
             },
           });
           reply = response.text?.trim() || '';
         } catch (aiErr) {
-          console.warn('Gemini API call failed, falling back to KB retrieval:', aiErr);
+          console.warn('DON AI model call failed, falling back to KB retrieval:', aiErr);
         }
       }
 
@@ -899,18 +1023,18 @@ export function createAppServer(options?: { corsOrigin?: string }) {
         if (matches.length > 0) {
           const top = matches[0];
           reply =
-            lang === 'uz'
+            targetLang === 'uz'
               ? `📋 **${top.title.uz}**\n\n${top.content.uz}\n\n*Qo‘shimcha savollaringiz bo‘lsa, yozishingiz yoki rasmiy qo‘llab-quvvatlash chiptasi ochishingiz mumkin.*`
               : `📋 **${top.title.ru}**\n\n${top.content.ru}\n\n*Если у вас остались вопросы, задайте их или создайте тикет в поддержку.*`;
         } else {
           reply =
-            lang === 'uz'
-              ? `Salom! Men MAFIA PRO sun'iy intellekt yordamchisiman. Men o‘yin qoidalari, Sherif va boshqa 18+ rollar, VIP obuna, Klanlar, reyting tizimi va do‘kon haqida ma'lumot bera olaman. Sizga qanday yordam bera olaman?`
-              : `Здравствуйте! Я официальный AI-ассистент MAFIA PRO. Могу объяснить правила игры, роли Шерифа, Доктора и других 18+ персонажей, VIP-подписку, Кланы, рейтинги и магазин. Чем я могу помочь?`;
+            targetLang === 'uz'
+              ? `Salom! Men DON AI — MAFIA PRO’ning rasmiy taktik yordamchisiman. Men o‘yin qoidalari, Sherif va boshqa 18+ rollar, funksional do‘kon buyumlari (Oltin/Olmos), VIP obuna, Klanlar va reyting tizimi haqida ma'lumot bera olaman. Sizga qanday yordam bera olaman?`
+              : `Здравствуйте! Я DON AI — официальный тактический советник MAFIA PRO. Могу объяснить правила игры, роли Шерифа и других 18+ персонажей, функциональный магазин (Золото/Алмазы), VIP-подписку, Кланы и рейтинги. Чем я могу помочь?`;
         }
       }
 
-      res.json({ reply, timestamp: Date.now() });
+      res.json({ reply, assistantName: 'DON AI', timestamp: Date.now() });
     } catch (err: unknown) {
       res.status(500).json({ error: err instanceof Error ? err.message : 'AI support error' });
     }
@@ -1016,6 +1140,7 @@ export function createAppServer(options?: { corsOrigin?: string }) {
       systemEvents: store.getSystemEvents(),
       backups: store.listBackups(),
       serverConfig: store.getServerConfig(),
+      shopAnalytics: store.getShopAnalytics(),
     });
   });
 
@@ -1083,6 +1208,10 @@ export function createAppServer(options?: { corsOrigin?: string }) {
     res.json({ ok: true });
   });
 
+  app.get('/api/roles/config', (_req, res) => {
+    res.json({ roles: store.getRoleConfigs() });
+  });
+
   app.post('/api/admin/roles', requirePermission('roles', 'edit'), (req, res) => {
     try {
       const actor = (req as Request & { user: UserProfile }).user;
@@ -1092,6 +1221,71 @@ export function createAppServer(options?: { corsOrigin?: string }) {
       res.json({ roleConfig: config });
     } catch (err: unknown) {
       res.status(400).json({ error: err instanceof Error ? err.message : 'Role update failed' });
+    }
+  });
+
+  app.post('/api/admin/roles/:roleId/image', requirePermission('roles', 'edit'), (req, res) => {
+    try {
+      const actor = (req as Request & { user: UserProfile }).user;
+      const roleId = String(req.params.roleId || '') as RoleId;
+      if (!ROLES[roleId]) {
+        return res.status(404).json({ error: 'Role not found' });
+      }
+      const { dataUrl, imageUrl, restoreDefault } = req.body || {};
+
+      if (restoreDefault === true) {
+        const roleConfig = store.restoreDefaultRoleImage(roleId, actor);
+        return res.json({ roleConfig, imageUrl: roleConfig.imageUrl || '' });
+      }
+
+      if (typeof dataUrl === 'string' && dataUrl.trim()) {
+        const match = dataUrl.trim().match(/^data:image\/(jpeg|jpg|png|webp);base64,([A-Za-z0-9+/=]+)$/);
+        if (!match) {
+          return res.status(400).json({ error: 'Invalid image format. Supported: JPG, PNG, WEBP.' });
+        }
+        const ext = match[1] === 'jpeg' ? 'jpg' : match[1];
+        const buffer = Buffer.from(match[2], 'base64');
+        if (buffer.length > 3 * 1024 * 1024) {
+          return res.status(400).json({ error: 'Image file size exceeds 3MB limit.' });
+        }
+        const filename = `${roleId}-${Date.now()}.${ext}`;
+        fs.writeFileSync(path.join(roleUploadDir, filename), buffer);
+        const publicPath = `/uploads/roles/${filename}`;
+        const roleConfig = store.setRoleImage(roleId, publicPath, actor);
+        return res.json({ roleConfig, imageUrl: publicPath });
+      }
+
+      if (typeof imageUrl === 'string' && imageUrl.trim()) {
+        const cleanUrl = imageUrl.trim();
+        const isSafe =
+          cleanUrl.startsWith('/assets/') ||
+          cleanUrl.startsWith('/uploads/') ||
+          cleanUrl.startsWith('https://') ||
+          cleanUrl.startsWith('http://');
+        if (!isSafe) {
+          return res.status(400).json({ error: 'Invalid image URL' });
+        }
+        const roleConfig = store.setRoleImage(roleId, cleanUrl, actor);
+        return res.json({ roleConfig, imageUrl: cleanUrl });
+      }
+
+      return res.status(400).json({ error: 'Image dataUrl, imageUrl, or restoreDefault is required' });
+    } catch (err: unknown) {
+      res.status(400).json({ error: err instanceof Error ? err.message : 'Role image upload failed' });
+    }
+  });
+
+  app.delete('/api/admin/roles/:roleId/image', requirePermission('roles', 'edit'), (req, res) => {
+    try {
+      const actor = (req as Request & { user: UserProfile }).user;
+      const roleId = String(req.params.roleId || '') as RoleId;
+      if (!ROLES[roleId]) {
+        return res.status(404).json({ error: 'Role not found' });
+      }
+      const roleConfig = store.removeRoleImage(roleId, actor);
+      res.json({ roleConfig, imageUrl: '' });
+    } catch (err: unknown) {
+      res.status(400).json({ error: err instanceof Error ? err.message : 'Role image delete failed' });
     }
   });
 
@@ -1207,9 +1401,12 @@ export function createAppServer(options?: { corsOrigin?: string }) {
     res.json({ ok: true });
   });
 
-  app.post('/api/admin/categories', requireAdmin, (req, res) => {
+  app.post('/api/admin/categories', requirePermission('shop', 'edit'), (req, res) => {
     try {
       const actor = (req as Request & { user: UserProfile }).user;
+      if (req.body?.slug && isLegacyCosmeticCategory(String(req.body.slug))) {
+        return res.status(403).json({ error: 'Cosmetic categories are permanently disabled.' });
+      }
       const category = store.saveCategory(req.body || {}, actor);
       res.json({ category });
     } catch (err: unknown) {
@@ -1217,9 +1414,12 @@ export function createAppServer(options?: { corsOrigin?: string }) {
     }
   });
 
-  app.post('/api/admin/products', requireAdmin, (req, res) => {
+  app.post('/api/admin/products', requirePermission('shop', 'edit'), (req, res) => {
     try {
       const actor = (req as Request & { user: UserProfile }).user;
+      if (req.body?.category && isLegacyCosmeticCategory(String(req.body.category))) {
+        return res.status(403).json({ error: 'Cosmetic shop items are permanently disabled.' });
+      }
       const product = store.saveShopProduct(req.body || {}, actor);
       res.json({ product });
     } catch (err: unknown) {
@@ -1227,7 +1427,22 @@ export function createAppServer(options?: { corsOrigin?: string }) {
     }
   });
 
-  app.delete('/api/admin/products/:id', requireAdmin, (req, res) => {
+  app.post('/api/admin/products/:id/archive', requirePermission('shop', 'edit'), (req, res) => {
+    try {
+      const actor = (req as Request & { user: UserProfile }).user;
+      const archived = req.body?.archived !== undefined ? Boolean(req.body.archived) : true;
+      const product = store.archiveShopProduct(String(req.params.id), archived, actor);
+      res.json({ product });
+    } catch (err: unknown) {
+      res.status(400).json({ error: err instanceof Error ? err.message : 'Archive failed' });
+    }
+  });
+
+  app.get('/api/admin/shop/analytics', requirePermission('shop', 'read'), (_req, res) => {
+    res.json(store.getShopAnalytics());
+  });
+
+  app.delete('/api/admin/products/:id', requirePermission('shop', 'delete'), (req, res) => {
     const actor = (req as Request & { user: UserProfile }).user;
     store.deleteShopProduct(String(req.params.id), actor);
     res.json({ ok: true });
@@ -1921,6 +2136,46 @@ export function createAppServer(options?: { corsOrigin?: string }) {
       broadcastRoomState(room.code);
     });
 
+    socket.on('room:selectRole', (payload: { code: string; roleId?: RoleId | null }, cb?: (res: unknown) => void) => {
+      if (!checkSocketRateLimit(playerId, 15, 5000)) {
+        return cb?.({ ok: false, error: 'Rate limit exceeded' });
+      }
+      if (!authUser) {
+        return cb?.({ ok: false, error: 'Sign in required to select a purchased role.' });
+      }
+      const room = rooms.get(String(payload?.code || '').toUpperCase());
+      if (!room || room.phase !== 'LOBBY') {
+        return cb?.({ ok: false, error: 'Role selection is only allowed in LOBBY before the match starts.' });
+      }
+      const player = room.players.find((pl) => pl.id === playerId && !pl.isSpectator);
+      if (!player) return cb?.({ ok: false, error: 'Player not found in lobby.' });
+
+      if (!payload.roleId) {
+        player.desiredRoleId = undefined;
+        broadcastRoomState(room.code);
+        return cb?.({ ok: true, desiredRoleId: undefined });
+      }
+
+      const requestedRole = String(payload.roleId) as RoleId;
+      const activeCount = room.players.filter((pl) => !pl.isSpectator).length;
+      const check = store.validateRoleSelectionForLobby(playerId, requestedRole, room.settings.mode, activeCount);
+      if (!check.valid) {
+        return cb?.({ ok: false, error: check.error || 'Invalid role selection.' });
+      }
+
+      if (
+        !['citizen', 'mafia'].includes(requestedRole) &&
+        room.players.some((pl) => pl.id !== playerId && pl.desiredRoleId === requestedRole)
+      ) {
+        return cb?.({ ok: false, error: 'Another player in this lobby already reserved this unique role.' });
+      }
+
+      player.desiredRoleId = requestedRole;
+      room.lastActivityAt = Date.now();
+      broadcastRoomState(room.code);
+      cb?.({ ok: true, desiredRoleId: requestedRole });
+    });
+
     socket.on('game:start', (payload: { code: string }, cb?: (res: unknown) => void) => {
       if (!checkSocketRateLimit(playerId, 10, 10000)) {
         return cb?.({ ok: false, error: 'Rate limit exceeded' });
@@ -1961,7 +2216,26 @@ export function createAppServer(options?: { corsOrigin?: string }) {
         return cb?.({ ok: false, error: 'Minimum 5 players required to start' });
       }
 
+      // Server-side validation of any lobby desiredRoleId preferences before dealing roles
+      for (const pl of room.players) {
+        if (pl.isSpectator || pl.isBot || !pl.desiredRoleId) continue;
+        const v = store.validateRoleSelectionForLobby(pl.id, pl.desiredRoleId, room.settings.mode, active.length);
+        if (!v.valid) {
+          pl.desiredRoleId = undefined;
+        }
+      }
+
       room.players = assignRolesToPlayers(room.players, room.settings.mode);
+      room.nightItemActions = [];
+
+      // Consume Role Tokens ONLY after match start + role assignment succeeded
+      for (const pl of room.players) {
+        if (!pl.isBot && !pl.isSpectator && pl.desiredRoleId && pl.roleId === pl.desiredRoleId) {
+          store.consumeRolePreferenceForMatch(pl.id, pl.roleId, room.code);
+        }
+        pl.desiredRoleId = undefined;
+      }
+
       room.phase = 'ROLE_ASSIGNMENT';
       room.round = 0;
       room.startedAt = Date.now();
@@ -1998,6 +2272,79 @@ export function createAppServer(options?: { corsOrigin?: string }) {
         room.lastActivityAt = Date.now();
         broadcastRoomState(room.code);
         cb?.({ ok: true });
+      }
+    );
+
+    socket.on(
+      'game:useItem',
+      (payload: { code: string; inventoryItemId: string; targetId?: string }, cb?: (res: unknown) => void) => {
+        if (!checkSocketRateLimit(playerId, 12, 5000)) {
+          return cb?.({ ok: false, error: 'Rate limit exceeded' });
+        }
+        if (!authUser) {
+          return cb?.({ ok: false, error: 'Sign in required to use functional shop items.' });
+        }
+        const room = rooms.get(String(payload?.code || '').toUpperCase());
+        if (!room) return cb?.({ ok: false, error: 'Room not found' });
+        const player = room.players.find((pl) => pl.id === playerId && pl.isAlive && !pl.isSpectator);
+        if (!player) return cb?.({ ok: false, error: 'Only alive players can use tactical items.' });
+
+        let targetPlayer: PlayerState | undefined;
+        if (payload?.targetId) {
+          targetPlayer = room.players.find((pl) => pl.id === payload.targetId && pl.isAlive && !pl.isSpectator);
+          if (!targetPlayer || targetPlayer.id === player.id) {
+            return cb?.({ ok: false, error: 'Invalid alive target selected.' });
+          }
+        }
+
+        const check = store.validateAndConsumeInGameItem(playerId, String(payload?.inventoryItemId || ''), {
+          roomCode: room.code,
+          mode: room.settings.mode,
+          phase: room.phase,
+          round: room.round,
+          usedItemCountsInMatch: player.usedItemCountsInMatch || {},
+          targetId: targetPlayer?.id,
+          targetName: targetPlayer?.username,
+        });
+
+        if (!check.valid || !check.item || !check.product) {
+          return cb?.({ ok: false, error: check.error || 'Item cannot be used right now.' });
+        }
+
+        const effectType = check.item.effectType || check.product.effectType || 'DOC_IDENTITY';
+        if (!player.usedItemCountsInMatch) player.usedItemCountsInMatch = {};
+        player.usedItemCountsInMatch[check.item.category] =
+          (player.usedItemCountsInMatch[check.item.category] || 0) + 1;
+
+        if (!player.activeMatchItems) player.activeMatchItems = [];
+        player.activeMatchItems.push({
+          inventoryItemId: check.item.id,
+          productId: check.item.productId,
+          category: check.item.category as import('../shared/types').FunctionalItemCategory,
+          effectType,
+          remainingRounds: check.product.effectConfig?.durationScope === 'MATCH' ? -1 : 1,
+          activatedAtRound: room.round,
+          consumed: false,
+        });
+
+        if (['DOC_INVESTIGATE', 'DOC_EVIDENCE', 'RIFLE_NIGHT_STRIKE'].includes(effectType)) {
+          if (!room.nightItemActions) room.nightItemActions = [];
+          room.nightItemActions.push({
+            actorId: player.id,
+            inventoryItemId: check.item.id,
+            effectType,
+            targetId: targetPlayer?.id,
+          });
+        }
+
+        if (!room.nightFeedback[player.id]) room.nightFeedback[player.id] = [];
+        room.nightFeedback[player.id].push(
+          `✅ Faollashtirildi: ${check.product.name.uz} / Активировано: ${check.product.name.ru}`
+        );
+
+        room.lastActivityAt = Date.now();
+        broadcastRoomState(room.code);
+        cb?.({ ok: true, effectType });
       }
     );
 
@@ -2064,12 +2411,16 @@ export function createAppServer(options?: { corsOrigin?: string }) {
       room.winnerIds = undefined;
       room.votes = {};
       room.nightActions = [];
+      room.nightItemActions = [];
       room.nightFeedback = {};
       room.events = [];
       for (const p of room.players) {
         p.isAlive = !p.isSpectator;
         p.roleId = undefined;
         p.team = undefined;
+        p.desiredRoleId = undefined;
+        p.activeMatchItems = [];
+        p.usedItemCountsInMatch = {};
         p.isReady = p.isHost || p.isBot;
       }
       broadcastRoomState(room.code);

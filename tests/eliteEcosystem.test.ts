@@ -141,25 +141,30 @@ describe('MAFIA PRO ELITE — Competitive Ecosystem & Security', () => {
     expect(day2.user.dailyReward.streak).toBe(2);
   });
 
-  it('enforces cosmetic purchase validation, ownership, and ELITE restrictions', () => {
-    // Non-ELITE user cannot buy premiumOnly item
-    expect(() => store.purchaseCosmetic(testUserId, 'av_obsidian_king')).toThrow(
-      'Active ELITE membership required'
+  it('disables legacy cosmetic purchases on /api/store/buy and supports pre-owned equip toggle cleanly', async () => {
+    // Legacy purchaseCosmetic is permanently disabled
+    expect(() => store.purchaseCosmetic(testUserId, 'av_crimson_don')).toThrow(
+      'Cosmetic shop purchases are permanently disabled.'
     );
 
-    // Normal item purchase succeeds and auto-equips
-    const updated = store.purchaseCosmetic(testUserId, 'av_crimson_don');
-    expect(updated.ownedCosmetics).toContain('av_crimson_don');
-    expect(updated.equippedCosmetics.AVATAR).toBe('av_crimson_don');
+    const buyRes = await fetch(`${baseUrl}/api/store/buy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${testToken}`,
+      },
+      body: JSON.stringify({ itemId: 'av_crimson_don' }),
+    });
+    expect(buyRes.status).toBe(410);
 
-    // Duplicate purchase fails
-    expect(() => store.purchaseCosmetic(testUserId, 'av_crimson_don')).toThrow('Item already owned');
+    // Pre-owned cosmetics (e.g., from Battle Pass / Rewards) can still be equipped/unequipped
+    const userObj = store.findUserById(testUserId)!;
+    userObj.ownedCosmetics.push('av_crimson_don');
 
-    // Toggle equip off and on
-    const unequipped = store.equipCosmetic(testUserId, 'av_crimson_don');
-    expect(unequipped.equippedCosmetics.AVATAR).toBeUndefined();
     const reequipped = store.equipCosmetic(testUserId, 'av_crimson_don');
     expect(reequipped.equippedCosmetics.AVATAR).toBe('av_crimson_don');
+    const unequipped = store.equipCosmetic(testUserId, 'av_crimson_don');
+    expect(unequipped.equippedCosmetics.AVATAR).toBeUndefined();
   });
 
   it('never fakes paid subscription activation without server-side PAYMENT_PROVIDER_SECRET HMAC', async () => {

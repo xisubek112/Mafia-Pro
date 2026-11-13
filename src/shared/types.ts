@@ -66,6 +66,7 @@ export interface RoleDefinition {
   limitations: Record<Language, string>;
   modes: GameMode[];
   minPlayers: number;
+  imageUrl: string;
 }
 
 export interface PhaseTimers {
@@ -96,6 +97,40 @@ export interface NightAction {
   nightNumber: number;
 }
 
+export type FunctionalItemCategory =
+  | 'STATISTICS_RESET'
+  | 'DOCUMENTS'
+  | 'PROTECTIVE_MASK'
+  | 'RIFLE'
+  | 'WHITE_KILLER_PROTECTION'
+  | 'VOTING_PROTECTION'
+  | 'ROLE_PURCHASE';
+
+export type FunctionalEffectType =
+  | 'STATS_RESET'
+  | 'DOC_INVESTIGATE'
+  | 'DOC_IDENTITY'
+  | 'DOC_PROTECTION'
+  | 'DOC_EVIDENCE'
+  | 'MASK_STATUS_BLOCK'
+  | 'RIFLE_NIGHT_STRIKE'
+  | 'WHITE_KILLER_SHIELD'
+  | 'VOTE_PARDON_SHIELD'
+  | 'ROLE_UNLOCK'
+  | 'ROLE_TOKEN';
+
+export type FunctionalItemType = 'CONSUMABLE' | 'DURATION' | 'PERMANENT_UNLOCK' | 'ACCOUNT_UTILITY';
+
+export interface ActiveMatchItemState {
+  inventoryItemId: string;
+  productId: string;
+  category: FunctionalItemCategory;
+  effectType: FunctionalEffectType;
+  remainingRounds?: number; // 1 for round-scoped, -1 for whole match
+  activatedAtRound: number;
+  consumed?: boolean;
+}
+
 export interface PlayerState {
   id: string;
   username: string;
@@ -109,6 +144,11 @@ export interface PlayerState {
   // Secret fields — stripped before sending to unauthorized clients
   roleId?: RoleId;
   team?: Team;
+  desiredRoleId?: RoleId;
+  desiredRoleInventoryId?: string;
+  // Active in-match functional items (private to owner & server)
+  activeMatchItems?: ActiveMatchItemState[];
+  usedItemCountsInMatch?: Record<string, number>;
   // Transient status effects
   isSilenced: boolean;
   isFramed: boolean;
@@ -125,7 +165,7 @@ export interface PlayerState {
   lastProtectedTargetId?: string;
   deathReason?: string;
   eliminatedOnRound?: number;
-  eliminatedBy?: 'MAFIA' | 'VOTE' | 'KILLER' | 'VIGILANTE' | 'VETERAN' | 'ARSONIST' | 'JAILER' | 'BODYGUARD';
+  eliminatedBy?: 'MAFIA' | 'VOTE' | 'KILLER' | 'VIGILANTE' | 'VETERAN' | 'ARSONIST' | 'JAILER' | 'BODYGUARD' | 'RIFLE';
   cleanedRole?: boolean;
   investigationHistory?: {
     targetId: string;
@@ -207,6 +247,7 @@ export interface RoomStateView {
     playerId: string;
     roleId?: RoleId;
     team?: Team;
+    desiredRoleId?: RoleId;
     mafiaTeammates: string[];
     nightFeedback: string[];
     hasActedThisNight: boolean;
@@ -216,6 +257,8 @@ export interface RoomStateView {
     usesRemaining: number;
     executionerTargetId?: string;
     gaTargetId?: string;
+    activeMatchItems?: ActiveMatchItemState[];
+    usedItemCountsInMatch?: Record<string, number>;
     investigationDossier?: {
       targetId: string;
       targetUsername: string;
@@ -317,6 +360,8 @@ export interface UserProfile {
   unlockedTitles: string[];
   ownedCosmetics: string[];
   equippedCosmetics: Partial<Record<CosmeticCategory, string>>;
+  unlockedRoles?: RoleId[];
+  activeRolePreference?: RoleId;
   subscription: SubscriptionState;
   dailyReward: DailyRewardState;
   missionProgress: Record<string, MissionProgressState>;
@@ -489,39 +534,137 @@ export interface SubscriptionRecord {
   createdAt: number;
 }
 
+export interface FunctionalEffectConfig {
+  allowedModes?: GameMode[];
+  allowedPhases?: GamePhase[];
+  allowedRoles?: RoleId[];
+  blockedRoles?: RoleId[];
+  durationScope?: 'ROUND' | 'MATCH' | 'PERMANENT';
+  documentKind?: 'INVESTIGATION' | 'IDENTITY' | 'PROTECTION' | 'EVIDENCE';
+  maxPerMatch?: number;
+  consumable?: boolean;
+  requiresTarget?: boolean;
+  targetRoleId?: RoleId;
+  resettableFields?: (
+    | 'wins'
+    | 'losses'
+    | 'draws'
+    | 'totalGames'
+    | 'winStreak'
+    | 'bestWinStreak'
+    | 'rolePlayCounts'
+    | 'modePlayCounts'
+  )[];
+  customRuleNote?: Record<Language, string>;
+}
+
 export interface ProductCategory {
   id: string;
-  slug: CosmeticCategory;
+  slug: FunctionalItemCategory | CosmeticCategory;
   name: Record<Language, string>;
+  description?: Record<Language, string>;
   sortOrder: number;
   isActive: boolean;
 }
 
 export interface ShopProduct {
   id: string;
-  category: CosmeticCategory;
+  category: FunctionalItemCategory | CosmeticCategory;
   name: Record<Language, string>;
   description: Record<Language, string>;
   imageUrl: string;
   priceUzs: number;
   priceGold?: number;
   priceDiamonds?: number;
+  currencyMode?: 'UZS' | 'GOLD' | 'DIAMONDS' | 'HYBRID';
   rarity: 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
   previewColor: string;
+  itemType?: FunctionalItemType;
+  effectType?: FunctionalEffectType;
+  effectConfig?: FunctionalEffectConfig;
+  usageCondition?: Record<Language, string>;
+  maxUsesPerItem?: number; // -1 = unlimited, 1+ = charges
+  purchaseLimitPerUser?: number; // -1 = unlimited, 1+ = max total active/owned
+  durationHours?: number; // 0 or undefined = permanent until used
   isUnique: boolean;
   vipOnly: boolean;
   isActive: boolean;
+  isArchived?: boolean;
   createdAt: number;
   updatedAt: number;
 }
+
+export type InventoryItemStatus = 'ACTIVE' | 'EQUIPPED' | 'CONSUMED' | 'EXPIRED';
 
 export interface InventoryItemRecord {
   id: string;
   userId: string;
   productId: string;
-  category: CosmeticCategory;
+  category: FunctionalItemCategory | CosmeticCategory;
+  effectType?: FunctionalEffectType;
+  itemName?: Record<Language, string>;
+  quantity?: number;
+  remainingUses?: number;
+  maxUsesPerItem?: number;
+  status?: InventoryItemStatus;
+  targetRoleId?: RoleId;
   orderId?: string;
   acquiredAt: number;
+  purchasedAt?: number;
+  expiresAt?: number;
+  lastUsedAt?: number;
+}
+
+export interface InventoryTransactionRecord {
+  id: string;
+  userId: string;
+  username: string;
+  inventoryItemId?: string;
+  productId: string;
+  productName: string;
+  action: 'PURCHASED' | 'CONSUMED' | 'ACTIVATED' | 'EXPIRED' | 'REFUNDED' | 'ADMIN_GRANTED' | 'STATISTICS_RESET';
+  quantityDelta: number;
+  usesDelta: number;
+  matchId?: string;
+  roomCode?: string;
+  details: string;
+  createdAt: number;
+}
+
+export interface ItemUsageHistoryRecord {
+  id: string;
+  userId: string;
+  username: string;
+  inventoryItemId: string;
+  productId: string;
+  category: FunctionalItemCategory;
+  effectType: FunctionalEffectType;
+  roomCode?: string;
+  matchId?: string;
+  round?: number;
+  phase?: GamePhase;
+  targetId?: string;
+  targetName?: string;
+  outcome: string;
+  createdAt: number;
+}
+
+export interface StatisticsResetRecord {
+  id: string;
+  userId: string;
+  username: string;
+  inventoryItemId: string;
+  resetFields: string[];
+  previousSnapshot: {
+    totalGames: number;
+    wins: number;
+    losses: number;
+    draws: number;
+    winStreak: number;
+    bestWinStreak: number;
+  };
+  preservedEloRating: number;
+  createdAt: number;
 }
 
 export interface OrderRecord {
@@ -738,6 +881,22 @@ export interface AdminOverview {
     maintenanceMode: boolean;
     defaultTimers: PhaseTimers;
     enabledModes: GameMode[];
+  };
+  shopAnalytics?: {
+    totalFunctionalOrders: number;
+    totalFunctionalPurchases: number;
+    totalItemUsages: number;
+    totalStatsResets: number;
+    activeInventoryItems: number;
+    productStats: {
+      productId: string;
+      name: Record<Language, string>;
+      category: string;
+      totalSold: number;
+      activeOwned: number;
+      totalConsumed: number;
+    }[];
+    recentUsageHistory: ItemUsageHistoryRecord[];
   };
 }
 

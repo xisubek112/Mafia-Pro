@@ -31,10 +31,12 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { ROLES } from '../shared/roles';
+import { resolveEffectiveRoleMeta } from '../shared/roleArtwork';
 import { RARITY_LABELS, ROLE_VISUALS } from '../shared/roleCards';
+import { InventoryItemRecord, ShopProduct } from '../shared/types';
 import { PhaseTransitions } from '../components/PhaseTransitions';
 import { PlayerCard } from '../components/PlayerCard';
-import { RoleArtwork } from '../components/RoleArtwork';
+import { RolePortrait } from '../components/RolePortrait';
 import { RoleRevealModal } from '../components/RoleRevealModal';
 import { VoicePanel } from '../components/VoicePanel';
 import { playTone, startAmbientLoop, stopAmbientLoop } from '../utils/sound';
@@ -53,6 +55,7 @@ export const GamePage: React.FC = () => {
     castVote,
     skipPhase,
     playAgain,
+    useGameItem,
     leaveRoom,
     showToast,
     token,
@@ -61,6 +64,7 @@ export const GamePage: React.FC = () => {
     ambientVolume,
     rainEnabled,
     serverClockOffset,
+    roleConfigs,
   } = useApp();
 
   const [secondsLeft, setSecondsLeft] = useState(0);
@@ -74,7 +78,27 @@ export const GamePage: React.FC = () => {
   const [reportReasonType, setReportReasonType] = useState('Toxic');
   const [reportDetails, setReportDetails] = useState('');
   const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [tacticalItems, setTacticalItems] = useState<(InventoryItemRecord & { product?: ShopProduct })[]>([]);
+  const [itemTargetId, setItemTargetId] = useState<string>('');
+  const [usingItemId, setUsingItemId] = useState<string | null>(null);
   const lastTickRef = useRef<number>(-1);
+
+  const loadTacticalItems = () => {
+    if (!token || !roomState) {
+      setTacticalItems([]);
+      return;
+    }
+    fetch('/api/inventory', { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((d) => {
+        if (d?.functionalItems) setTacticalItems(d.functionalItems);
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadTacticalItems();
+  }, [token, roomState?.code, roomState?.phase, roomState?.round]);
 
   useEffect(() => {
     if (!roomState) {
@@ -424,10 +448,16 @@ export const GamePage: React.FC = () => {
                       boxShadow: `0 12px 32px -12px ${ROLE_VISUALS[myRole.id].glowColor}`,
                     }}
                   >
-                    <RoleArtwork spec={ROLE_VISUALS[myRole.id]} className="w-full h-24 mb-3" />
+                    <RolePortrait
+                      roleId={myRole.id}
+                      roleConfigs={roleConfigs}
+                      lazy={false}
+                      alt={resolveEffectiveRoleMeta(myRole.id, lang, roleConfigs).name}
+                      className="w-full aspect-square max-h-56 mx-auto rounded-xl mb-3 border border-white/10"
+                    />
                     <div className="flex items-center justify-between gap-2 mb-1.5">
                       <h3 className="font-display text-lg font-extrabold text-[#F5F5F7]">
-                        {myRole.name[lang]}
+                        {resolveEffectiveRoleMeta(myRole.id, lang, roleConfigs).name}
                       </h3>
                       <span
                         className="text-[11px] font-bold"
@@ -437,11 +467,13 @@ export const GamePage: React.FC = () => {
                       </span>
                     </div>
                     <p className="text-xs text-[#F5F5F7]/80 leading-relaxed">
-                      {myRole.shortDesc[lang]}
+                      {resolveEffectiveRoleMeta(myRole.id, lang, roleConfigs).shortDesc}
                     </p>
 
                     <div className="mt-4 pt-3 border-t border-white/10">
-                      <p className="text-xs font-semibold text-[#E7B65B]">{myRole.abilityName[lang]}</p>
+                      <p className="text-xs font-semibold text-[#E7B65B]">
+                        {resolveEffectiveRoleMeta(myRole.id, lang, roleConfigs).abilityName}
+                      </p>
                       <p className="mt-1 text-xs text-[#F5F5F7]/70 leading-relaxed">
                         {myRole.abilityDesc[lang]}
                       </p>
@@ -552,6 +584,124 @@ export const GamePage: React.FC = () => {
             )}
           </div>
 
+          {/* Active Shields & Tactical Functional Items */}
+          {me?.isAlive && !me?.isSpectator && !isVictory && (
+            (() => {
+              const aliveOthers = roomState.players.filter(
+                (p) => !p.isSpectator && p.isAlive && p.id !== myId
+              );
+              const usableNow = tacticalItems.filter((inv) => {
+                if (inv.status !== 'ACTIVE' && inv.status !== 'EQUIPPED') return false;
+                if (inv.category === 'STATISTICS_RESET' || inv.category === 'ROLE_PURCHASE') return false;
+                const cfg = inv.product?.effectConfig;
+                if (cfg?.allowedModes && !cfg.allowedModes.includes(roomState.settings.mode)) return false;
+                if (cfg?.allowedPhases && !cfg.allowedPhases.includes(roomState.phase)) return false;
+                if (!cfg?.allowedPhases && roomState.phase !== 'NIGHT') return false;
+                const usedCount = priv?.usedItemCountsInMatch?.[inv.category] || 0;
+                if (cfg?.maxPerMatch && usedCount >= cfg.maxPerMatch) return false;
+                return true;
+              });
+              const activeShields = (priv?.activeMatchItems || []).filter((it) => !it.consumed);
+              if (usableNow.length === 0 && activeShields.length === 0) return null;
+
+              const targetedEffects = ['DOC_INVESTIGATE', 'DOC_EVIDENCE', 'RIFLE_NIGHT_STRIKE'];
+              const hasTargetedUsable = usableNow.some((u) =>
+                targetedEffects.includes(u.effectType || u.product?.effectType || '')
+              );
+              const resolvedTarget = itemTargetId || selectedTarget || aliveOthers[0]?.id || '';
+
+              return (
+                <div className={`${panelClass} rounded-2xl p-4 space-y-3 border border-[#E7B65B]/25 transition-colors duration-700`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-display text-xs font-bold text-[#E7B65B] uppercase tracking-wider flex items-center gap-1.5">
+                      <Shield className="w-3.5 h-3.5" />
+                      {lang === 'uz' ? 'Taktik Buyumlar' : 'Тактические предметы'}
+                    </h3>
+                    {activeShields.length > 0 && (
+                      <span className="text-[10px] font-mono text-emerald-400 font-bold">
+                        {activeShields.length} {lang === 'uz' ? 'faol' : 'акт.'}
+                      </span>
+                    )}
+                  </div>
+
+                  {activeShields.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {activeShields.map((sh) => (
+                        <span
+                          key={sh.inventoryItemId}
+                          className="text-[10px] font-mono font-bold px-2 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/35 text-emerald-300"
+                        >
+                          {sh.effectType}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {usableNow.length > 0 && (
+                    <div className="space-y-2">
+                      {hasTargetedUsable && aliveOthers.length > 0 && (
+                        <select
+                          value={resolvedTarget}
+                          onChange={(e) => setItemTargetId(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-[#050711]/90 border border-white/15 text-xs text-[#F5F5F7]"
+                        >
+                          {aliveOthers.map((pl) => (
+                            <option key={pl.id} value={pl.id}>
+                              {pl.username}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+
+                      <div className="space-y-1.5">
+                        {usableNow.map((inv) => {
+                          const eff = inv.effectType || inv.product?.effectType || 'DOC_IDENTITY';
+                          const needsTarget = targetedEffects.includes(eff);
+                          return (
+                            <button
+                              key={inv.id}
+                              type="button"
+                              disabled={usingItemId === inv.id || (needsTarget && !resolvedTarget)}
+                              onClick={async () => {
+                                setUsingItemId(inv.id);
+                                const ok = await useGameItem(inv.id, needsTarget ? resolvedTarget : undefined);
+                                setUsingItemId(null);
+                                if (ok) loadTacticalItems();
+                              }}
+                              className="w-full px-3 py-2 rounded-xl bg-[#111522] hover:bg-[#E7B65B]/15 border border-white/10 hover:border-[#E7B65B]/45 text-left text-xs flex items-center justify-between gap-2 transition-colors disabled:opacity-45"
+                            >
+                              <div className="min-w-0">
+                                <p className="font-semibold text-[#F5F5F7] truncate">
+                                  {(inv.itemName || inv.product?.name)?.[lang] || inv.productId}
+                                </p>
+                                <p className="text-[10px] font-mono text-[#F5F5F7]/50">
+                                  {needsTarget
+                                    ? `${lang === 'uz' ? 'Nishon:' : 'Цель:'} ${
+                                        aliveOthers.find((o) => o.id === resolvedTarget)?.username || '—'
+                                      }`
+                                    : lang === 'uz'
+                                      ? 'Shaxsiy himoya'
+                                      : 'Личная активация'}
+                                </p>
+                              </div>
+                              <span className="px-2 py-1 rounded-lg bg-[#E63946] text-[10px] font-bold text-white shrink-0">
+                                {usingItemId === inv.id
+                                  ? '...'
+                                  : lang === 'uz'
+                                    ? 'Qo‘llash'
+                                    : 'Применить'}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()
+          )}
+
           <div className={`${panelClass} rounded-2xl p-5 max-h-[260px] overflow-y-auto transition-colors duration-700`}>
             <h3 className="font-display text-sm font-bold text-[#F5F5F7] mb-3">
               {t.game.eventsLog}
@@ -613,6 +763,7 @@ export const GamePage: React.FC = () => {
                       isMafiaTeammate={priv?.mafiaTeammates?.includes(p.id)}
                       hasActedThisNight={priv?.hasActedThisNight}
                       currentNightTargetId={priv?.currentNightTargetId || selectedTarget}
+                      roleConfigs={roleConfigs}
                       onSelectNight={() => {
                         if (myRole?.targetType === 'SELF' || (myRole?.id === 'arsonist' && p.id === myId)) {
                           handleConfirmNight(myId);

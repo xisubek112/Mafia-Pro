@@ -4,6 +4,8 @@ import { TRANSLATIONS } from '../shared/i18n';
 import {
   ChatMessage,
   Language,
+  RoleConfigOverride,
+  RoleId,
   RoomSettings,
   RoomStateView,
   UserProfile,
@@ -80,8 +82,12 @@ interface AppContextValue {
   castVote: (targetId: string) => Promise<void>;
   skipPhase: () => void;
   playAgain: () => void;
+  selectDesiredRole: (roleId?: RoleId | null) => Promise<boolean>;
+  useGameItem: (inventoryItemId: string, targetId?: string) => Promise<boolean>;
   sendChat: (channel: 'PUBLIC' | 'MAFIA' | 'DEAD', text: string) => void;
   reactChat: (messageId: string, emoji: string) => void;
+  roleConfigs: RoleConfigOverride[];
+  refreshRoleConfigs: () => Promise<void>;
   showToast: (message: string, type?: ToastItem['type']) => void;
   askConfirm: (title: string, message: string, onConfirm: () => void) => void;
 }
@@ -123,8 +129,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [serverClockOffset, setServerClockOffset] = useState<number>(0);
   const [roomState, setRoomState] = useState<RoomStateView | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [roleConfigs, setRoleConfigs] = useState<RoleConfigOverride[]>([]);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null);
+
+  const refreshRoleConfigs = useCallback(async () => {
+    try {
+      const res = await fetch('/api/roles/config');
+      if (res.ok) {
+        const d = await res.json();
+        if (Array.isArray(d.roles)) {
+          setRoleConfigs(d.roles);
+        }
+      }
+    } catch {
+      // fallback to built-in ROLES artwork
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshRoleConfigs();
+  }, [refreshRoleConfigs]);
 
   const socketRef = useRef<Socket | null>(null);
   const prevPhaseRef = useRef<string | undefined>(undefined);
@@ -491,6 +516,58 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     socketRef.current?.emit('game:playAgain', { code: roomState.code });
   };
 
+  const selectDesiredRole = (roleId?: RoleId | null): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (!roomState) return resolve(false);
+      socketRef.current?.emit(
+        'room:selectRole',
+        { code: roomState.code, roleId: roleId || null },
+        (res: { ok: boolean; error?: string }) => {
+          if (res?.ok) {
+            playTone('click', soundEnabled);
+            showToast(
+              roleId
+                ? lang === 'uz'
+                  ? 'Tanlangan rol saqlandi'
+                  : 'Выбранная роль сохранена'
+                : lang === 'uz'
+                  ? 'Rol tanlovi bekor qilindi'
+                  : 'Выбор роли сброшен',
+              'success'
+            );
+            resolve(true);
+          } else {
+            showToast(res?.error || (lang === 'uz' ? 'Rolni tanlab bo‘lmadi' : 'Не удалось выбрать роль'), 'error');
+            resolve(false);
+          }
+        }
+      );
+    });
+  };
+
+  const useGameItem = (inventoryItemId: string, targetId?: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (!roomState) return resolve(false);
+      socketRef.current?.emit(
+        'game:useItem',
+        { code: roomState.code, inventoryItemId, targetId },
+        (res: { ok: boolean; error?: string }) => {
+          if (res?.ok) {
+            playTone('click', soundEnabled);
+            showToast(
+              lang === 'uz' ? 'Maxsus buyum faollashtirildi' : 'Тактический предмет активирован',
+              'success'
+            );
+            resolve(true);
+          } else {
+            showToast(res?.error || (lang === 'uz' ? 'Buyumni ishlatib bo‘lmadi' : 'Не удалось использовать предмет'), 'error');
+            resolve(false);
+          }
+        }
+      );
+    });
+  };
+
   const sendChat = (channel: 'PUBLIC' | 'MAFIA' | 'DEAD', text: string) => {
     if (!roomState) return;
     socketRef.current?.emit('chat:send', { code: roomState.code, channel, text });
@@ -543,8 +620,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         castVote,
         skipPhase,
         playAgain,
+        selectDesiredRole,
+        useGameItem,
         sendChat,
         reactChat,
+        roleConfigs,
+        refreshRoleConfigs,
         showToast,
         askConfirm,
       }}

@@ -30,6 +30,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['CLASSIC', 'ADVANCED', 'CHAOS'],
     minPlayers: 5,
+    imageUrl: '/assets/roles/don.jpg',
   },
   mafia: {
     id: 'mafia',
@@ -59,6 +60,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['CLASSIC', 'ADVANCED', 'CHAOS'],
     minPlayers: 5,
+    imageUrl: '/assets/roles/mafia.jpg',
   },
   consigliere: {
     id: 'consigliere',
@@ -88,6 +90,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['ADVANCED', 'CHAOS'],
     minPlayers: 7,
+    imageUrl: '/assets/roles/consigliere.jpg',
   },
   silencer: {
     id: 'silencer',
@@ -117,6 +120,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['ADVANCED', 'CHAOS'],
     minPlayers: 7,
+    imageUrl: '/assets/roles/silencer.jpg',
   },
   framer: {
     id: 'framer',
@@ -146,6 +150,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['ADVANCED', 'CHAOS'],
     minPlayers: 8,
+    imageUrl: '/assets/roles/framer.jpg',
   },
   janitor: {
     id: 'janitor',
@@ -175,6 +180,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['ADVANCED', 'CHAOS'],
     minPlayers: 8,
+    imageUrl: '/assets/roles/janitor.jpg',
   },
   godfather: {
     id: 'godfather',
@@ -204,6 +210,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['CHAOS'],
     minPlayers: 10,
+    imageUrl: '/assets/roles/godfather.jpg',
   },
 
   // ======================== TOWN TEAM (13) ========================
@@ -235,6 +242,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['CLASSIC', 'ADVANCED', 'CHAOS'],
     minPlayers: 5,
+    imageUrl: '/assets/roles/citizen.jpg',
   },
   sheriff: {
     id: 'sheriff',
@@ -264,6 +272,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['CLASSIC', 'ADVANCED', 'CHAOS'],
     minPlayers: 5,
+    imageUrl: '/assets/roles/sheriff.jpg',
   },
   doctor: {
     id: 'doctor',
@@ -293,6 +302,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['CLASSIC', 'ADVANCED', 'CHAOS'],
     minPlayers: 5,
+    imageUrl: '/assets/roles/doctor.jpg',
   },
   bodyguard: {
     id: 'bodyguard',
@@ -322,6 +332,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['ADVANCED', 'CHAOS'],
     minPlayers: 6,
+    imageUrl: '/assets/roles/bodyguard.jpg',
   },
   detective: {
     id: 'detective',
@@ -351,6 +362,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['ADVANCED', 'CHAOS'],
     minPlayers: 6,
+    imageUrl: '/assets/roles/detective.jpg',
   },
   veteran: {
     id: 'veteran',
@@ -380,6 +392,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['ADVANCED', 'CHAOS'],
     minPlayers: 8,
+    imageUrl: '/assets/roles/veteran.jpg',
   },
   vigilante: {
     id: 'vigilante',
@@ -409,6 +422,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['ADVANCED', 'CHAOS'],
     minPlayers: 7,
+    imageUrl: '/assets/roles/vigilante.jpg',
   },
   mayor: {
     id: 'mayor',
@@ -438,6 +452,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['ADVANCED', 'CHAOS'],
     minPlayers: 7,
+    imageUrl: '/assets/roles/mayor.jpg',
   },
   medium: {
     id: 'medium',
@@ -467,6 +482,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['ADVANCED', 'CHAOS'],
     minPlayers: 8,
+    imageUrl: '/assets/roles/medium.jpg',
   },
   lookout: {
     id: 'lookout',
@@ -496,6 +512,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['ADVANCED', 'CHAOS'],
     minPlayers: 7,
+    imageUrl: '/assets/roles/lookout.jpg',
   },
   tracker: {
     id: 'tracker',
@@ -525,6 +542,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['CHAOS'],
     minPlayers: 8,
+    imageUrl: '/assets/roles/tracker.jpg',
   },
   escort: {
     id: 'escort',
@@ -554,6 +572,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['ADVANCED', 'CHAOS'],
     minPlayers: 7,
+    imageUrl: '/assets/roles/escort.jpg',
   },
   jailer: {
     id: 'jailer',
@@ -583,6 +602,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['CHAOS'],
     minPlayers: 9,
+    imageUrl: '/assets/roles/jailer.jpg',
   },
 
   // ======================== NEUTRAL TEAM (10) ========================
@@ -614,6 +634,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['ADVANCED', 'CHAOS'],
     minPlayers: 8,
+    imageUrl: '/assets/roles/serial_killer.jpg',
   },
   jester: {
     id: 'jester',
@@ -643,6 +664,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['ADVANCED', 'CHAOS'],
     minPlayers: 7,
+    imageUrl: '/assets/roles/jester.jpg',
   },
   survivor: {
     id: 'survivor',
@@ -672,6 +694,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['ADVANCED', 'CHAOS'],
     minPlayers: 8,
+    imageUrl: '/assets/roles/survivor.jpg',
   },
   arsonist: {
     id: 'arsonist',
@@ -701,6 +724,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['CHAOS'],
     minPlayers: 9,
+    imageUrl: '/assets/roles/arsonist.jpg',
   },
   witch: {
     id: 'witch',
@@ -730,6 +754,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['CHAOS'],
     minPlayers: 9,
+    imageUrl: '/assets/roles/witch.jpg',
   },
   executioner: {
     id: 'executioner',
@@ -759,6 +784,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['CHAOS'],
     minPlayers: 8,
+    imageUrl: '/assets/roles/executioner.jpg',
   },
   amnesiac: {
     id: 'amnesiac',
@@ -788,6 +814,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['CHAOS'],
     minPlayers: 9,
+    imageUrl: '/assets/roles/amnesiac.jpg',
   },
   guardian_angel: {
     id: 'guardian_angel',
@@ -817,6 +844,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['CHAOS'],
     minPlayers: 9,
+    imageUrl: '/assets/roles/guardian_angel.jpg',
   },
   plaguebearer: {
     id: 'plaguebearer',
@@ -846,6 +874,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['CHAOS'],
     minPlayers: 10,
+    imageUrl: '/assets/roles/plaguebearer.jpg',
   },
   vampire: {
     id: 'vampire',
@@ -875,6 +904,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     },
     modes: ['CHAOS'],
     minPlayers: 10,
+    imageUrl: '/assets/roles/vampire.jpg',
   },
 };
 

@@ -2,9 +2,10 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Lock } from 'lucide-react';
 import { ROLES } from '../shared/roles';
+import { resolveEffectiveRoleMeta } from '../shared/roleArtwork';
 import { RARITY_LABELS, ROLE_VISUALS } from '../shared/roleCards';
-import { Language, RoleId } from '../shared/types';
-import { RoleArtwork } from './RoleArtwork';
+import { Language, RoleConfigOverride, RoleId } from '../shared/types';
+import { RolePortrait } from './RolePortrait';
 
 interface RoleCardProps {
   roleId: RoleId;
@@ -13,6 +14,7 @@ interface RoleCardProps {
   abilityLabel: string;
   winLabel?: string;
   limitsLabel?: string;
+  roleConfigs?: RoleConfigOverride[];
   locked?: boolean;
   compact?: boolean;
   onClick?: () => void;
@@ -25,6 +27,7 @@ export const RoleCard: React.FC<RoleCardProps> = ({
   abilityLabel,
   winLabel,
   limitsLabel,
+  roleConfigs,
   locked = false,
   compact = false,
   onClick,
@@ -32,13 +35,14 @@ export const RoleCard: React.FC<RoleCardProps> = ({
   const role = ROLES[roleId];
   const spec = ROLE_VISUALS[roleId];
   const rarity = RARITY_LABELS[spec.rarity];
+  const meta = resolveEffectiveRoleMeta(roleId, lang, roleConfigs);
 
   return (
     <motion.div
       whileHover={{ y: -3 }}
       transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
       onClick={onClick}
-      className={`relative rounded-2xl p-4 flex flex-col justify-between overflow-hidden ${
+      className={`group relative rounded-2xl p-4 flex flex-col justify-between overflow-hidden ${
         onClick ? 'cursor-pointer' : ''
       }`}
       style={{
@@ -54,7 +58,17 @@ export const RoleCard: React.FC<RoleCardProps> = ({
       />
 
       <div>
-        <RoleArtwork spec={spec} className={compact ? 'w-full h-24 mb-3' : 'w-full h-32 mb-3.5'} />
+        <RolePortrait
+          roleId={roleId}
+          roleConfigs={roleConfigs}
+          alt={meta.name}
+          lazy={!compact}
+          className={
+            compact
+              ? 'w-full aspect-square max-h-48 mx-auto rounded-xl mb-3 border border-white/10'
+              : 'w-full aspect-square rounded-xl mb-3.5 border border-white/10'
+          }
+        />
 
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -62,7 +76,7 @@ export const RoleCard: React.FC<RoleCardProps> = ({
               {rarity[lang]} · {teamLabel}
             </p>
             <h3 className="font-display text-lg font-extrabold text-[#F5F5F7] truncate mt-0.5">
-              {role.name[lang]}
+              {meta.name}
             </h3>
           </div>
           {locked && (
@@ -72,7 +86,7 @@ export const RoleCard: React.FC<RoleCardProps> = ({
           )}
         </div>
 
-        <p className="mt-2 text-xs text-[#F5F5F7]/75 leading-relaxed">{role.shortDesc[lang]}</p>
+        <p className="mt-2 text-xs text-[#F5F5F7]/75 leading-relaxed">{meta.shortDesc}</p>
 
         <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5 text-xs">
           <div>

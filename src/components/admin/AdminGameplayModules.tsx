@@ -1,7 +1,29 @@
 import React, { useMemo, useState } from 'react';
-import { Eye, Gamepad2, Plus, Search, Shield, Trophy, Users, XCircle } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Eye,
+  Gamepad2,
+  Image as ImageIcon,
+  Plus,
+  RotateCcw,
+  Search,
+  Shield,
+  Trash2,
+  Trophy,
+  Upload,
+  Users,
+  XCircle,
+} from 'lucide-react';
+import { useApp } from '../../context/AppContext';
 import { ROLE_LIST } from '../../shared/roles';
+import {
+  getDefaultRoleImageUrl,
+  getRoleImageStatus,
+  resolveRoleImageUrl,
+} from '../../shared/roleArtwork';
 import { AdminOverview, GameMode, Language, RoleDefinition, Team, TournamentFormat } from '../../shared/types';
+import { RolePortrait } from '../RolePortrait';
 
 export const AdminGameplayModules: React.FC<{
   moduleId: 'rooms' | 'roles' | 'tournaments';
@@ -11,6 +33,8 @@ export const AdminGameplayModules: React.FC<{
   onRefresh: () => Promise<void> | void;
   showToast: (msg: string, type?: 'info' | 'success' | 'error') => void;
 }> = ({ moduleId, data, token, lang, onRefresh, showToast }) => {
+  const { refreshRoleConfigs } = useApp();
+
   // Module 06: Rooms
   const [roomSearch, setRoomSearch] = useState('');
   const [inspectRoomCode, setInspectRoomCode] = useState<string | null>(null);
@@ -19,6 +43,8 @@ export const AdminGameplayModules: React.FC<{
   // Module 07: Roles
   const [roleSearch, setRoleSearch] = useState('');
   const [teamFilter, setTeamFilter] = useState<'ALL' | Team>('ALL');
+  const [missingOnly, setMissingOnly] = useState(false);
+  const [previewRole, setPreviewRole] = useState<RoleDefinition | null>(null);
   const [editingRole, setEditingRole] = useState<RoleDefinition | null>(null);
   const [roleNameUz, setRoleNameUz] = useState('');
   const [roleNameRu, setRoleNameRu] = useState('');
@@ -29,6 +55,7 @@ export const AdminGameplayModules: React.FC<{
   const [roleRarity, setRoleRarity] = useState<'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY'>('COMMON');
   const [roleImageUrl, setRoleImageUrl] = useState('');
   const [roleActive, setRoleActive] = useState(true);
+  const [uploadingRoleImage, setUploadingRoleImage] = useState(false);
 
   // Module 08: Tournaments
   const [trnName, setTrnName] = useState('');
@@ -65,6 +92,7 @@ export const AdminGameplayModules: React.FC<{
 
   const openRoleEditor = (role: RoleDefinition) => {
     const ov = roleConfigMap.get(role.id);
+    const resolvedUrl = resolveRoleImageUrl(role.id, data.roleConfigs);
     setEditingRole(role);
     setRoleNameUz(ov?.name?.uz || role.name.uz);
     setRoleNameRu(ov?.name?.ru || role.name.ru);
@@ -73,7 +101,7 @@ export const AdminGameplayModules: React.FC<{
     setRoleAbilityUz(ov?.abilityName?.uz || role.abilityName.uz);
     setRoleAbilityRu(ov?.abilityName?.ru || role.abilityName.ru);
     setRoleRarity(ov?.rarity || 'COMMON');
-    setRoleImageUrl(ov?.imageUrl || '');
+    setRoleImageUrl(resolvedUrl || '');
     setRoleActive(ov ? ov.isActive : true);
   };
 
@@ -100,10 +128,114 @@ export const AdminGameplayModules: React.FC<{
     if (res.ok) {
       showToast(lang === 'uz' ? 'Rol saqlandi' : 'Роль сохранена', 'success');
       setEditingRole(null);
-      onRefresh();
+      await Promise.all([onRefresh(), refreshRoleConfigs()]);
     } else {
       const err = await res.json();
       showToast(err.error || 'Error', 'error');
+    }
+  };
+
+  const handleUploadRoleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !editingRole) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      showToast(
+        lang === 'uz' ? 'Faqat JPG, PNG yoki WEBP ruxsat etiladi' : 'Допустимы только JPG, PNG или WEBP',
+        'error',
+      );
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      showToast(
+        lang === 'uz' ? 'Fayl hajmi 3MB dan oshmasligi kerak' : 'Размер файла не должен превышать 3 МБ',
+        'error',
+      );
+      return;
+    }
+    setUploadingRoleImage(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('File read error'));
+        reader.readAsDataURL(file);
+      });
+      const res = await fetch(`/api/admin/roles/${editingRole.id}/image`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ dataUrl }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        showToast(body.error || 'Upload error', 'error');
+        return;
+      }
+      setRoleImageUrl(body.imageUrl || '');
+      showToast(
+        lang === 'uz' ? 'Rol portreti yuklandi' : 'Портрет роли загружен',
+        'success',
+      );
+      await Promise.all([onRefresh(), refreshRoleConfigs()]);
+    } catch {
+      showToast(lang === 'uz' ? 'Yuklashda xatolik' : 'Ошибка загрузки', 'error');
+    } finally {
+      setUploadingRoleImage(false);
+    }
+  };
+
+  const handleRemoveRoleImage = async () => {
+    if (!editingRole) return;
+    setUploadingRoleImage(true);
+    try {
+      const res = await fetch(`/api/admin/roles/${editingRole.id}/image`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        showToast(body.error || 'Error', 'error');
+        return;
+      }
+      setRoleImageUrl('');
+      showToast(
+        lang === 'uz' ? "Rol rasmi o'chirildi" : 'Изображение роли удалено',
+        'info',
+      );
+      await Promise.all([onRefresh(), refreshRoleConfigs()]);
+    } finally {
+      setUploadingRoleImage(false);
+    }
+  };
+
+  const handleRestoreDefaultRoleImage = async () => {
+    if (!editingRole) return;
+    setUploadingRoleImage(true);
+    try {
+      const res = await fetch(`/api/admin/roles/${editingRole.id}/image`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ restoreDefault: true }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        showToast(body.error || 'Error', 'error');
+        return;
+      }
+      setRoleImageUrl(body.imageUrl || getDefaultRoleImageUrl(editingRole.id));
+      showToast(
+        lang === 'uz' ? 'Standart portret tiklandi' : 'Стандартный портрет восстановлен',
+        'success',
+      );
+      await Promise.all([onRefresh(), refreshRoleConfigs()]);
+    } finally {
+      setUploadingRoleImage(false);
     }
   };
 
@@ -318,8 +450,21 @@ export const AdminGameplayModules: React.FC<{
   }
 
   if (moduleId === 'roles') {
+    const imageSummary = ROLE_LIST.reduce(
+      (acc, r) => {
+        const st = getRoleImageStatus(r.id, data.roleConfigs);
+        acc.total += 1;
+        if (st === 'MISSING') acc.missing += 1;
+        else acc.ready += 1;
+        if (st === 'CUSTOM') acc.custom += 1;
+        return acc;
+      },
+      { total: 0, ready: 0, custom: 0, missing: 0 },
+    );
+
     const filteredRoles = ROLE_LIST.filter((r) => {
       if (teamFilter !== 'ALL' && r.team !== teamFilter) return false;
+      if (missingOnly && getRoleImageStatus(r.id, data.roleConfigs) !== 'MISSING') return false;
       const q = roleSearch.trim().toLowerCase();
       if (!q) return true;
       return (
@@ -331,6 +476,44 @@ export const AdminGameplayModules: React.FC<{
 
     return (
       <div className="space-y-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="glass-panel rounded-2xl p-4 border border-white/10">
+            <div className="text-[11px] uppercase tracking-wider text-[#F5F5F7]/50">
+              {lang === 'uz' ? 'Jami rollar' : 'Всего ролей'}
+            </div>
+            <div className="font-display text-2xl font-bold text-[#F5F5F7] mt-1">
+              {imageSummary.total}
+            </div>
+          </div>
+          <div className="glass-panel rounded-2xl p-4 border border-emerald-500/20">
+            <div className="text-[11px] uppercase tracking-wider text-emerald-300/80 flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              {lang === 'uz' ? 'Portretlar tayyor' : 'Портреты готовы'}
+            </div>
+            <div className="font-display text-2xl font-bold text-emerald-300 mt-1">
+              {imageSummary.ready} / {imageSummary.total}
+            </div>
+          </div>
+          <div className="glass-panel rounded-2xl p-4 border border-[#E7B65B]/25">
+            <div className="text-[11px] uppercase tracking-wider text-[#E7B65B]/85 flex items-center gap-1.5">
+              <ImageIcon className="w-3.5 h-3.5" />
+              {lang === 'uz' ? 'Maxsus yuklangan' : 'Пользовательские'}
+            </div>
+            <div className="font-display text-2xl font-bold text-[#E7B65B] mt-1">
+              {imageSummary.custom}
+            </div>
+          </div>
+          <div className="glass-panel rounded-2xl p-4 border border-[#E63946]/25">
+            <div className="text-[11px] uppercase tracking-wider text-[#E63946] flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              {lang === 'uz' ? 'Rasmsiz rollar' : 'Без изображения'}
+            </div>
+            <div className="font-display text-2xl font-bold text-[#F5F5F7] mt-1">
+              {imageSummary.missing}
+            </div>
+          </div>
+        </div>
+
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="relative flex-1 min-w-[220px] max-w-md">
             <Search className="w-4 h-4 text-[#F5F5F7]/40 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -341,7 +524,7 @@ export const AdminGameplayModules: React.FC<{
               className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#090B12] border border-white/10 text-xs text-[#F5F5F7] outline-none focus:border-[#E7B65B]/50"
             />
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             {(['ALL', 'TOWN', 'MAFIA', 'NEUTRAL'] as const).map((tm) => (
               <button
                 key={tm}
@@ -355,6 +538,17 @@ export const AdminGameplayModules: React.FC<{
                 {tm}
               </button>
             ))}
+            <button
+              onClick={() => setMissingOnly((v) => !v)}
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border flex items-center gap-1.5 ${
+                missingOnly
+                  ? 'bg-[#E7B65B] border-[#E7B65B] text-[#090B12]'
+                  : 'bg-[#090B12] border-white/10 text-[#F5F5F7]/65 hover:text-white'
+              }`}
+            >
+              <AlertTriangle className="w-3.5 h-3.5" />
+              {lang === 'uz' ? `Rasmsiz (${imageSummary.missing})` : `Без фото (${imageSummary.missing})`}
+            </button>
           </div>
         </div>
 
@@ -365,62 +559,169 @@ export const AdminGameplayModules: React.FC<{
             const title = ov?.name?.[lang] || role.name[lang];
             const desc = ov?.description?.[lang] || role.shortDesc[lang];
             const ability = ov?.abilityName?.[lang] || role.abilityName[lang];
+            const imgStatus = getRoleImageStatus(role.id, data.roleConfigs);
 
             return (
               <div
                 key={role.id}
-                className={`glass-panel rounded-2xl p-4 border space-y-2.5 ${
-                  active ? 'border-white/10' : 'border-[#E63946]/30 opacity-70'
+                className={`glass-panel rounded-2xl p-4 border space-y-3 ${
+                  active ? 'border-white/10' : 'border-[#E63946]/30 opacity-75'
                 }`}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-display text-sm font-bold text-[#F5F5F7]">{title}</span>
+                <div className="flex items-start gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewRole(role)}
+                    title={lang === 'uz' ? 'Portretni kattalashtirish' : 'Увеличить портрет'}
+                    className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-white/15 group"
+                  >
+                    <RolePortrait
+                      roleId={role.id}
+                      roleConfigs={data.roleConfigs}
+                      alt={title}
+                      className="w-full h-full"
+                    />
+                    {imgStatus === 'MISSING' && (
+                      <span className="absolute inset-x-0 bottom-0 bg-[#E63946]/90 text-[9px] font-bold text-white py-0.5 text-center">
+                        MISSING
+                      </span>
+                    )}
+                  </button>
+
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-display text-sm font-bold text-[#F5F5F7] truncate">
+                            {title}
+                          </span>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                              role.team === 'MAFIA'
+                                ? 'bg-[#E63946]/20 text-[#E63946]'
+                                : role.team === 'TOWN'
+                                  ? 'bg-emerald-500/20 text-emerald-300'
+                                  : 'bg-[#A855F7]/20 text-[#A855F7]'
+                            }`}
+                          >
+                            {role.team}
+                          </span>
+                        </div>
+                        <p className="text-[11px] font-mono text-[#E7B65B] mt-0.5 truncate">{ability}</p>
+                      </div>
                       <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
-                          role.team === 'MAFIA'
-                            ? 'bg-[#E63946]/20 text-[#E63946]'
-                            : role.team === 'TOWN'
-                              ? 'bg-emerald-500/20 text-emerald-300'
-                              : 'bg-[#A855F7]/20 text-[#A855F7]'
+                        className={`text-[10px] px-2 py-0.5 rounded font-bold shrink-0 ${
+                          active ? 'bg-emerald-500/15 text-emerald-300' : 'bg-[#E63946]/20 text-[#E63946]'
                         }`}
                       >
-                        {role.team}
+                        {active ? 'ACTIVE' : 'DISABLED'}
                       </span>
                     </div>
-                    <p className="text-[11px] font-mono text-[#E7B65B] mt-0.5">{ability}</p>
+
+                    <div className="flex items-center gap-1.5 pt-0.5">
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold border ${
+                          imgStatus === 'CUSTOM'
+                            ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30'
+                            : imgStatus === 'DEFAULT'
+                              ? 'bg-[#E7B65B]/15 text-[#E7B65B] border-[#E7B65B]/30'
+                              : 'bg-[#E63946]/15 text-[#E63946] border-[#E63946]/30'
+                        }`}
+                      >
+                        ART: {imgStatus}
+                      </span>
+                      <span className="text-[10px] font-mono text-[#F5F5F7]/40">{role.id}</span>
+                    </div>
                   </div>
-                  <span
-                    className={`text-[10px] px-2 py-0.5 rounded font-bold ${
-                      active ? 'bg-emerald-500/15 text-emerald-300' : 'bg-[#E63946]/20 text-[#E63946]'
-                    }`}
-                  >
-                    {active ? 'ACTIVE' : 'DISABLED'}
-                  </span>
                 </div>
+
                 <p className="text-xs text-[#F5F5F7]/70 line-clamp-2">{desc}</p>
-                <div className="flex items-center justify-between pt-2 border-t border-white/10 text-[11px]">
-                  <span className="font-mono text-[#F5F5F7]/45">
+
+                <div className="flex items-center justify-between pt-2 border-t border-white/10 text-[11px] gap-2">
+                  <span className="font-mono text-[#F5F5F7]/45 truncate">
                     {ov?.rarity || 'COMMON'} • {role.modes.join('/')}
                   </span>
-                  <button
-                    onClick={() => openRoleEditor(role)}
-                    className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-[#F5F5F7] font-semibold"
-                  >
-                    {lang === 'uz' ? 'Tahrirlash' : 'Изменить'}
-                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewRole(role)}
+                      className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-[#F5F5F7]/75 hover:text-white"
+                      title={lang === 'uz' ? "Ko'rish" : 'Просмотр'}
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openRoleEditor(role)}
+                      className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-[#F5F5F7] font-semibold"
+                    >
+                      {lang === 'uz' ? 'Tahrirlash' : 'Изменить'}
+                    </button>
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
 
+        {filteredRoles.length === 0 && (
+          <div className="glass-panel rounded-2xl p-8 text-center text-xs text-[#F5F5F7]/55 border border-white/10">
+            {lang === 'uz' ? 'Mos keladigan rol topilmadi' : 'Подходящие роли не найдены'}
+          </div>
+        )}
+
+        {previewRole && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="glass-panel rounded-2xl p-5 max-w-md w-full border border-white/15 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-display text-base font-bold text-[#F5F5F7]">
+                  {(roleConfigMap.get(previewRole.id)?.name?.[lang] || previewRole.name[lang])}{' '}
+                  <span className="text-xs font-mono text-[#F5F5F7]/45">({previewRole.id})</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setPreviewRole(null)}
+                  className="text-xs text-[#F5F5F7]/60 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="w-full max-w-[320px] mx-auto aspect-square rounded-2xl overflow-hidden border border-white/15">
+                <RolePortrait
+                  roleId={previewRole.id}
+                  roleConfigs={data.roleConfigs}
+                  lazy={false}
+                  className="w-full h-full"
+                />
+              </div>
+              <div className="text-xs text-[#F5F5F7]/80 space-y-1.5">
+                <p className="font-mono text-[#E7B65B]">
+                  {roleConfigMap.get(previewRole.id)?.abilityName?.[lang] || previewRole.abilityName[lang]}
+                </p>
+                <p>{previewRole.abilityDesc[lang]}</p>
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = previewRole;
+                    setPreviewRole(null);
+                    openRoleEditor(target);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-[#E63946] text-xs font-bold text-white"
+                >
+                  {lang === 'uz' ? 'Portret / Rolni tahrirlash' : 'Редактировать'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {editingRole && (
           <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 overflow-y-auto">
             <form
               onSubmit={saveRoleConfig}
-              className="glass-panel rounded-2xl p-6 max-w-lg w-full space-y-4 border border-white/15"
+              className="glass-panel rounded-2xl p-6 max-w-xl w-full space-y-4 border border-white/15 my-auto"
             >
               <div className="flex items-center justify-between">
                 <h3 className="font-display text-base font-bold text-[#F5F5F7] flex items-center gap-2">
@@ -435,6 +736,78 @@ export const AdminGameplayModules: React.FC<{
                   ✕
                 </button>
               </div>
+
+              <div className="p-3.5 rounded-2xl bg-[#090B12] border border-white/10 flex flex-col sm:flex-row items-center gap-4">
+                <div className="w-28 h-28 rounded-xl overflow-hidden border border-white/15 shrink-0">
+                  <RolePortrait
+                    roleId={editingRole.id}
+                    imageUrlOverride={roleImageUrl.trim() ? roleImageUrl.trim() : null}
+                    lazy={false}
+                    className="w-full h-full"
+                  />
+                </div>
+                <div className="flex-1 w-full space-y-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-[#F5F5F7]">
+                      {lang === 'uz' ? 'Rol portreti (1:1)' : 'Портрет роли (1:1)'}
+                    </span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 text-[#E7B65B]">
+                      {roleImageUrl.trim()
+                        ? roleImageUrl.trim() === getDefaultRoleImageUrl(editingRole.id)
+                          ? 'DEFAULT'
+                          : 'CUSTOM'
+                        : 'MISSING'}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <label
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#E63946] hover:bg-[#E63946]/90 text-white font-semibold cursor-pointer ${
+                        uploadingRoleImage ? 'opacity-50 pointer-events-none' : ''
+                      }`}
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      {uploadingRoleImage
+                        ? lang === 'uz'
+                          ? 'Yuklanmoqda...'
+                          : 'Загрузка...'
+                        : lang === 'uz'
+                          ? 'Rasm yuklash'
+                          : 'Загрузить фото'}
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handleUploadRoleFile}
+                        disabled={uploadingRoleImage}
+                        className="hidden"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      disabled={uploadingRoleImage}
+                      onClick={handleRestoreDefaultRoleImage}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-[#E7B65B] font-semibold disabled:opacity-50"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      {lang === 'uz' ? 'Standart' : 'Стандарт'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={uploadingRoleImage || !roleImageUrl.trim()}
+                      onClick={handleRemoveRoleImage}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#E63946]/15 hover:bg-[#E63946]/25 text-[#E63946] font-semibold disabled:opacity-40"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      {lang === 'uz' ? "O'chirish" : 'Удалить'}
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-[#F5F5F7]/45">
+                    {lang === 'uz'
+                      ? 'JPG, PNG yoki WEBP (maks. 3MB). Yoki quyida URL kiriting.'
+                      : 'JPG, PNG или WEBP (макс. 3 МБ). Или укажите URL ниже.'}
+                  </p>
+                </div>
+              </div>
+
               <div className="grid sm:grid-cols-2 gap-3 text-xs">
                 <div>
                   <label className="text-[#F5F5F7]/60 block mb-1">Name (UZ)</label>
@@ -504,7 +877,7 @@ export const AdminGameplayModules: React.FC<{
                   <input
                     value={roleImageUrl}
                     onChange={(e) => setRoleImageUrl(e.target.value)}
-                    placeholder="https://..."
+                    placeholder="/assets/roles/don.jpg"
                     className="w-full px-3 py-2 rounded-xl bg-[#090B12] border border-white/10 text-[#F5F5F7]"
                   />
                 </div>

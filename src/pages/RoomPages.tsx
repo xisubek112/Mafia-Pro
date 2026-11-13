@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Bot, Check, Copy, Link2, LogOut, Play, Send, UserX, Users, Wifi, WifiOff } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Bot, Check, Copy, Link2, LogOut, Play, Send, Shield, UserX, Users, Wifi, WifiOff } from 'lucide-react';
 import { VoicePanel } from '../components/VoicePanel';
 import { useApp } from '../context/AppContext';
-import { GameMode } from '../shared/types';
+import { ROLES } from '../shared/roles';
+import { GameMode, RoleId } from '../shared/types';
 
 export const CreateRoomPage: React.FC = () => {
   const { t, lang, createRoom } = useApp();
@@ -222,6 +223,8 @@ export const JoinRoomPage: React.FC = () => {
 export const LobbyPage: React.FC = () => {
   const {
     roomState,
+    token,
+    user,
     t,
     lang,
     toggleReady,
@@ -229,6 +232,7 @@ export const LobbyPage: React.FC = () => {
     startGame,
     kickPlayer,
     leaveRoom,
+    selectDesiredRole,
     chatMessages,
     sendChat,
     askConfirm,
@@ -237,6 +241,37 @@ export const LobbyPage: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [msgText, setMsgText] = useState('');
+  const [eligibleRoles, setEligibleRoles] = useState<
+    Array<{
+      roleId: RoleId;
+      source: 'UNLOCK' | 'TOKEN';
+      remainingUses: number;
+      minPlayers: number;
+      compatibleWithMode: boolean;
+    }>
+  >([]);
+  const [roleBusy, setRoleBusy] = useState(false);
+
+  useEffect(() => {
+    if (!token || !roomState || roomState.phase !== 'LOBBY') {
+      setEligibleRoles([]);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/shop/eligible-roles?mode=${encodeURIComponent(roomState.settings.mode)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.roles) {
+          setEligibleRoles(data.roles);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [token, roomState?.code, roomState?.phase, roomState?.settings.mode]);
 
   if (!roomState) return null;
 
@@ -244,6 +279,7 @@ export const LobbyPage: React.FC = () => {
   const me = roomState.players.find((p) => p.id === myId);
   const isHost = Boolean(me?.isHost);
   const activePlayers = roomState.players.filter((p) => !p.isSpectator);
+  const desiredRoleId = roomState.myPrivateData?.desiredRoleId;
 
   const copyCode = () => {
     navigator.clipboard.writeText(roomState.code);
@@ -384,6 +420,76 @@ export const LobbyPage: React.FC = () => {
               ))}
             </div>
           </div>
+
+          {/* Lobby Role Pass / Unlock Selector */}
+          {user && !me?.isSpectator && eligibleRoles.length > 0 && (
+            <div className="mt-5 p-4 rounded-xl bg-[#090B12]/80 border border-[#E7B65B]/30 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-[#E7B65B]" />
+                  <span className="text-xs font-bold text-[#F5F5F7]">
+                    {lang === 'uz'
+                      ? 'Sotib olingan rol tanlovi (o‘yin oldidan)'
+                      : 'Выбор купленной роли (до старта)'}
+                  </span>
+                </div>
+                {desiredRoleId && (
+                  <button
+                    type="button"
+                    disabled={roleBusy}
+                    onClick={async () => {
+                      setRoleBusy(true);
+                      await selectDesiredRole(null);
+                      setRoleBusy(false);
+                    }}
+                    className="text-[11px] font-semibold text-[#E63946] hover:underline"
+                  >
+                    {lang === 'uz' ? 'Tasodifiy rolga qaytarish' : 'Сбросить на случайную'}
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {eligibleRoles.map((entry) => {
+                  const roleDef = ROLES[entry.roleId];
+                  const selected = desiredRoleId === entry.roleId;
+                  const enoughPlayers =
+                    activePlayers.length >= entry.minPlayers || roomState.settings.fillWithBots;
+                  const disabled = roleBusy || !entry.compatibleWithMode || !enoughPlayers;
+                  return (
+                    <button
+                      key={`${entry.roleId}_${entry.source}`}
+                      type="button"
+                      disabled={disabled}
+                      onClick={async () => {
+                        setRoleBusy(true);
+                        await selectDesiredRole(selected ? null : entry.roleId);
+                        setRoleBusy(false);
+                      }}
+                      className={`px-3 py-2 rounded-xl border text-xs font-semibold transition-colors flex items-center gap-2 disabled:opacity-45 ${
+                        selected
+                          ? 'bg-[#E7B65B] text-[#090B12] border-[#E7B65B]'
+                          : 'bg-[#111522] text-[#F5F5F7] border-white/15 hover:border-[#E7B65B]/50'
+                      }`}
+                    >
+                      <span>{roleDef ? roleDef.name[lang] : entry.roleId}</span>
+                      <span className="font-mono text-[10px] opacity-80">
+                        {entry.source === 'UNLOCK'
+                          ? lang === 'uz'
+                            ? 'Doimiy'
+                            : 'Пост.'
+                          : `x${entry.remainingUses}`}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-[#F5F5F7]/55">
+                {lang === 'uz'
+                  ? 'Jeton faqat o‘yin boshlanib, rol berilgandan keyin sarflanadi.'
+                  : 'Жетон списывается только после старта матча и выдачи роли.'}
+              </p>
+            </div>
+          )}
 
           <div className="mt-6 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
             {activePlayers.length < 5 && (

@@ -1,5 +1,7 @@
 import { generateRoleDistribution, ROLES } from '../shared/roles';
 import {
+  ActiveMatchItemState,
+  FunctionalEffectType,
   GameEvent,
   GameMode,
   GamePhase,
@@ -13,6 +15,13 @@ import {
   Team,
 } from '../shared/types';
 
+export interface NightItemAction {
+  actorId: string;
+  inventoryItemId: string;
+  effectType: FunctionalEffectType;
+  targetId?: string;
+}
+
 export interface InternalRoomState {
   code: string;
   name: string;
@@ -22,6 +31,7 @@ export interface InternalRoomState {
   phaseEndsAt: number;
   players: PlayerState[];
   nightActions: NightAction[];
+  nightItemActions?: NightItemAction[];
   nightFeedback: Record<string, string[]>; // playerId -> private feedback lines
   votes: Record<string, string>; // voterId -> targetId | 'SKIP'
   events: GameEvent[];
@@ -58,14 +68,45 @@ export function createEvent(
 export function assignRolesToPlayers(players: PlayerState[], mode: GameMode): PlayerState[] {
   const activePlayers = players.filter((p) => !p.isSpectator);
   const roles = generateRoleDistribution(activePlayers.length, mode);
-  const shuffledRoles = [...roles].sort(() => Math.random() - 0.5);
+  const pool = [...roles].sort(() => Math.random() - 0.5);
 
   const updated = players.map((p) => ({ ...p }));
-  let roleIdx = 0;
+  const assignedRolesByPlayer = new Map<string, RoleId>();
 
+  // Phase 1: Honor validated pre-match desiredRoleId preferences without duplicate unique roles
+  const multiCopyRoles = new Set<RoleId>(['citizen', 'mafia']);
+  for (const p of updated) {
+    if (p.isSpectator || !p.desiredRoleId) continue;
+    const reqRole = p.desiredRoleId;
+    const roleDef = ROLES[reqRole];
+    if (!roleDef || !roleDef.modes.includes(mode) || activePlayers.length < roleDef.minPlayers) {
+      continue;
+    }
+    const alreadyClaimedUnique =
+      !multiCopyRoles.has(reqRole) && Array.from(assignedRolesByPlayer.values()).includes(reqRole);
+    if (alreadyClaimedUnique) continue;
+
+    const exactIdx = pool.indexOf(reqRole);
+    if (exactIdx !== -1) {
+      pool.splice(exactIdx, 1);
+      assignedRolesByPlayer.set(p.id, reqRole);
+    } else {
+      // Swap out a filler slot of the same team (citizen/mafia/survivor) or last filler to honor eligible unlock/token
+      let swapIdx = pool.findIndex((r) => ROLES[r].team === roleDef.team && (r === 'citizen' || r === 'mafia' || r === 'survivor'));
+      if (swapIdx === -1) swapIdx = pool.findIndex((r) => ROLES[r].team === roleDef.team);
+      if (swapIdx === -1 && pool.length > 0) swapIdx = pool.length - 1;
+      if (swapIdx !== -1) {
+        pool.splice(swapIdx, 1);
+        assignedRolesByPlayer.set(p.id, reqRole);
+      }
+    }
+  }
+
+  // Phase 2: Assign remaining roles randomly
+  let poolIdx = 0;
   for (const p of updated) {
     if (p.isSpectator) continue;
-    const roleId = shuffledRoles[roleIdx++];
+    const roleId = assignedRolesByPlayer.get(p.id) || pool[poolIdx++];
     const roleDef = ROLES[roleId];
     p.roleId = roleId;
     p.team = roleDef.team;
@@ -86,6 +127,8 @@ export function assignRolesToPlayers(players: PlayerState[], mode: GameMode): Pl
     p.executionerTargetId = undefined;
     p.gaTargetId = undefined;
     p.investigationHistory = [];
+    p.activeMatchItems = [];
+    p.usedItemCountsInMatch = {};
   }
 
   // Assign Executioner & Guardian Angel targets
@@ -236,6 +279,18 @@ export function resolveNightPhase(room: InternalRoomState): {
   const visitsByTarget = new Map<string, string[]>(); // targetId -> visitorIds
   const visitedByActor = new Map<string, string>(); // actorId -> targetId
   const pendingKills: { targetId: string; attackerId: string; by: PlayerState['eliminatedBy'] }[] = [];
+  const maskedPlayerIds = new Set<string>();
+  const identityDocPlayerIds = new Set<string>();
+
+  const hasActiveItem = (p: PlayerState, effectType: FunctionalEffectType): ActiveMatchItemState | undefined =>
+    p.activeMatchItems?.find((i) => i.effectType === effectType && !i.consumed);
+
+  for (const p of room.players) {
+    if (!p.isAlive || p.isSpectator) continue;
+    if (hasActiveItem(p, 'MASK_STATUS_BLOCK')) maskedPlayerIds.add(p.id);
+    if (hasActiveItem(p, 'DOC_IDENTITY')) identityDocPlayerIds.add(p.id);
+    if (hasActiveItem(p, 'DOC_PROTECTION')) healedIds.add(p.id);
+  }
 
   const addFeedback = (playerId: string, msg: string) => {
     if (!room.nightFeedback[playerId]) room.nightFeedback[playerId] = [];
@@ -298,6 +353,8 @@ export function resolveNightPhase(room: InternalRoomState): {
           const target = room.players.find((p) => p.id === act.targetId);
           if (target?.roleId === 'serial_killer') {
             pendingKills.push({ targetId: actor.id, attackerId: target.id, by: 'KILLER' });
+          } else if (maskedPlayerIds.has(act.targetId)) {
+            addFeedback(act.targetId, '🛡️ Himoya niqobi tungi rol bloklanishini to‘sdi / Защитная маска заблокировала вмешательство.');
           } else {
             blockedIds.add(act.targetId);
           }
@@ -317,7 +374,13 @@ export function resolveNightPhase(room: InternalRoomState): {
       }
       case 'framer': {
         const target = room.players.find((p) => p.id === act.targetId);
-        if (target) target.isFramed = true;
+        if (target) {
+          if (maskedPlayerIds.has(target.id) || identityDocPlayerIds.has(target.id)) {
+            addFeedback(target.id, '🛡️ Hujjat/niqob shaxsiyatingizni soxtalashtirishdan himoya qildi / Личность защищена от подставы.');
+          } else {
+            target.isFramed = true;
+          }
+        }
         break;
       }
       case 'guardian_angel': {
@@ -330,8 +393,12 @@ export function resolveNightPhase(room: InternalRoomState): {
       case 'silencer': {
         const target = room.players.find((p) => p.id === act.targetId);
         if (target) {
-          target.isSilenced = true;
-          addFeedback(target.id, 'You were silenced for the upcoming day.');
+          if (maskedPlayerIds.has(target.id)) {
+            addFeedback(target.id, '🛡️ Himoya niqobi ovoz o‘chirishni to‘sdi / Защитная маска отразила глушение.');
+          } else {
+            target.isSilenced = true;
+            addFeedback(target.id, 'You were silenced for the upcoming day.');
+          }
         }
         break;
       }
@@ -514,6 +581,59 @@ export function resolveNightPhase(room: InternalRoomState): {
     }
   }
 
+  // Execute Functional Shop Night Item Actions (Documents & Rifle)
+  for (const itemAct of room.nightItemActions || []) {
+    const actor = room.players.find((p) => p.id === itemAct.actorId);
+    if (!actor || !actor.isAlive) continue;
+
+    if (itemAct.effectType === 'DOC_INVESTIGATE' && itemAct.targetId) {
+      const target = room.players.find((p) => p.id === itemAct.targetId && p.isAlive);
+      if (target?.roleId) {
+        const isSuspicious =
+          (target.isFramed && !identityDocPlayerIds.has(target.id)) ||
+          (target.team === 'MAFIA' && target.roleId !== 'don' && target.roleId !== 'godfather') ||
+          target.roleId === 'serial_killer';
+        const label = {
+          uz: isSuspicious ? '🚨 HUJJAT: Shubhali shaxs' : '🛡️ HUJJAT: Toza fuqaro',
+          ru: isSuspicious ? '🚨 ОРДЕР: Подозрительный статус' : '🛡️ ОРДЕР: Статус чист',
+        };
+        addFeedback(
+          actor.id,
+          isSuspicious
+            ? `📄 Tergov Hujjati (${target.username}): SHUBHALI status aniqlandi / Ордер (${target.username}): ПОДОЗРИТЕЛЬНЫЙ статус.`
+            : `📄 Tergov Hujjati (${target.username}): TOZA (begunoh) / Ордер (${target.username}): ЧИСТ.`
+        );
+        if (!actor.investigationHistory) actor.investigationHistory = [];
+        actor.investigationHistory.push({
+          targetId: target.id,
+          targetUsername: target.username,
+          round: room.round,
+          result: isSuspicious ? 'SUSPICIOUS' : 'INNOCENT',
+          team: target.isFramed && !identityDocPlayerIds.has(target.id) ? 'MAFIA' : target.team,
+          label,
+        });
+      }
+    } else if (itemAct.effectType === 'DOC_EVIDENCE' && itemAct.targetId) {
+      const target = room.players.find((p) => p.id === itemAct.targetId);
+      if (target) {
+        const acted = visitedByActor.has(target.id);
+        const visitedCount = (visitsByTarget.get(target.id) || []).length;
+        addFeedback(
+          actor.id,
+          acted
+            ? `📂 Dalillar Hujjati: ${target.username} tunda harakat qildi (${visitedCount} ta mehmon) / Документ улик: ${target.username} выходил(а) ночью.`
+            : `📂 Dalillar Hujjati: ${target.username} tunda uyda qoldi (${visitedCount} ta mehmon) / Документ улик: ${target.username} остался(лась) дома.`
+        );
+      }
+    } else if (itemAct.effectType === 'RIFLE_NIGHT_STRIKE' && itemAct.targetId) {
+      const target = room.players.find((p) => p.id === itemAct.targetId && p.isAlive);
+      if (target && target.id !== actor.id) {
+        pendingKills.push({ targetId: target.id, attackerId: actor.id, by: 'RIFLE' });
+        addFeedback(actor.id, `🎯 Miltiqdan o‘q uzildi: ${target.username} / Выстрел из винтовки по цели ${target.username}.`);
+      }
+    }
+  }
+
   // Veteran kills all visitors
   for (const vetId of alertVeteranIds) {
     const visitors = visitsByTarget.get(vetId) || [];
@@ -555,6 +675,19 @@ export function resolveNightPhase(room: InternalRoomState): {
 
     if (jailedIds.has(target.id) || divineProtectedIds.has(target.id)) {
       continue;
+    }
+
+    // White Killer Protection: blocks solo neutral lethal killer attacks (serial_killer, vampire, arsonist, plaguebearer) without leaking attacker role
+    if (kill.by === 'KILLER' || kill.by === 'ARSONIST') {
+      const wkShield = hasActiveItem(target, 'WHITE_KILLER_SHIELD');
+      if (wkShield) {
+        wkShield.consumed = true;
+        addFeedback(
+          target.id,
+          '🛡️ Oq Qotildan Himoya qalqoni tungi halokatli hujumni qaytardi! / Щит от Белого Убийцы отразил смертельную атаку!'
+        );
+        continue;
+      }
     }
 
     if (healedIds.has(target.id) && kill.by !== 'ARSONIST') {
@@ -661,12 +794,27 @@ export function resolveNightPhase(room: InternalRoomState): {
     }
   }
 
+  // Expire round-scoped active match items cleanly
+  for (const p of room.players) {
+    if (!p.activeMatchItems) continue;
+    for (const it of p.activeMatchItems) {
+      if (!it.consumed && it.remainingRounds && it.remainingRounds > 0) {
+        it.remainingRounds -= 1;
+        if (it.remainingRounds <= 0) {
+          it.consumed = true;
+        }
+      }
+    }
+  }
+
   room.nightActions = [];
+  room.nightItemActions = [];
   return { deaths };
 }
 
 export function resolveVotingPhase(room: InternalRoomState): {
   executedPlayerId?: string;
+  voteProtectedPlayerId?: string;
   isTie: boolean;
   jesterWinnerId?: string;
   executionerWinnerId?: string;
@@ -708,6 +856,23 @@ export function resolveVotingPhase(room: InternalRoomState): {
   const executedId = topTargets[0];
   const executed = room.players.find((p) => p.id === executedId);
   if (!executed) return { isTie: false };
+
+  // Voting Protection Check: Votes remain transparent, but shield vetoes execution once
+  const voteShield = executed.activeMatchItems?.find(
+    (i) => i.effectType === 'VOTE_PARDON_SHIELD' && !i.consumed
+  );
+  if (voteShield) {
+    voteShield.consumed = true;
+    room.events.push(
+      createEvent(
+        room.round,
+        'EXECUTION',
+        `⚖️ ${executed.username} Ovozdan Himoya (Veto) qalqoni yordamida qatldan saqlanib qoldi! (Ovozlar o‘zgarishsiz qoldi)`,
+        `⚖️ ${executed.username} избежал(а) казни благодаря Защите от голосования! (Голоса не изменялись)`
+      )
+    );
+    return { isTie: false, voteProtectedPlayerId: executedId };
+  }
 
   executed.isAlive = false;
   executed.eliminatedOnRound = room.round;
@@ -902,6 +1067,7 @@ export function buildRoomViewForPlayer(room: InternalRoomState, viewerId: string
           playerId: viewer.id,
           roleId: viewer.roleId,
           team: viewer.team,
+          desiredRoleId: viewer.desiredRoleId,
           mafiaTeammates,
           nightFeedback: room.nightFeedback[viewer.id] || [],
           hasActedThisNight: Boolean(currentAction),
@@ -911,6 +1077,8 @@ export function buildRoomViewForPlayer(room: InternalRoomState, viewerId: string
           usesRemaining: roleDef && roleDef.maxUses > 0 ? Math.max(0, roleDef.maxUses - used) : -1,
           executionerTargetId: viewer.executionerTargetId,
           gaTargetId: viewer.gaTargetId,
+          activeMatchItems: (viewer.activeMatchItems || []).filter((i) => !i.consumed),
+          usedItemCountsInMatch: viewer.usedItemCountsInMatch || {},
           investigationDossier: investigations,
         }
       : undefined,

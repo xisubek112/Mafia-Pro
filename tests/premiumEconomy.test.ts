@@ -20,8 +20,11 @@ describe('MAFIA PRO 2.0 — Premium Economy, VIP, Shop, Inventory & Sandbox Paym
       const monthly = catalog.vipPlans.find((p: { id: string }) => p.id === 'vip_monthly');
       expect(monthly.priceUzs).toBe(15000);
       expect(monthly.durationDays).toBe(30);
-      expect(catalog.products.some((p: { category: string }) => p.category === 'CHAT_DECORATION')).toBe(true);
-      expect(catalog.products.some((p: { category: string }) => p.category === 'PROFILE_BG')).toBe(true);
+      expect(catalog.products.some((p: { category: string }) => p.category === 'DOCUMENTS')).toBe(true);
+      expect(catalog.products.some((p: { category: string }) => p.category === 'RIFLE')).toBe(true);
+      expect(catalog.products.some((p: { category: string }) => p.category === 'STATISTICS_RESET')).toBe(true);
+      expect(catalog.products.some((p: { category: string }) => p.category === 'CHAT_DECORATION')).toBe(false);
+      expect(catalog.products.some((p: { category: string }) => p.category === 'PROFILE_BG')).toBe(false);
 
       // 2. Register a fresh test player
       const regRes = await fetch(`${base}/api/auth/register`, {
@@ -72,67 +75,52 @@ describe('MAFIA PRO 2.0 — Premium Economy, VIP, Shop, Inventory & Sandbox Paym
       });
       expect(badHook.status).toBe(401);
 
-      // 6. Create & pay for a Shop Product (pb_noir_penthouse)
-      const prodOrderRes = await fetch(`${base}/api/payments/orders`, {
+      // 6. Verify UZS checkout is disabled for functional items (in-game currency only)
+      const uzsShopRes = await fetch(`${base}/api/payments/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           orderType: 'SHOP_PRODUCT',
-          referenceId: 'pb_noir_penthouse',
+          referenceId: 'fn_role_unlock_detective',
           provider: 'CLICK',
         }),
       });
-      expect(prodOrderRes.status).toBe(200);
-      const prodOrderData = await prodOrderRes.json();
+      expect(uzsShopRes.status).toBe(400);
 
-      // Valid signed webhook callback
-      const secret = process.env.CLICK_SECRET_KEY || process.env.PAYMENT_WEBHOOK_SECRET || '';
-      if (secret) {
-        const sig = crypto
-          .createHmac('sha256', secret)
-          .update(`${prodOrderData.order.id}:PAID:click_tx_99`)
-          .digest('hex');
-        const okHook = await fetch(`${base}/api/payments/webhook/click`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-payment-signature': sig },
-          body: JSON.stringify({ orderId: prodOrderData.order.id, status: 'PAID', providerTxId: 'click_tx_99' }),
-        });
-        expect(okHook.status).toBe(200);
-      } else {
-        await fetch(`${base}/api/payments/sandbox/complete`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ orderId: prodOrderData.order.id, status: 'PAID' }),
-        });
-      }
+      // 7. Purchase fn_role_unlock_detective with in-game Diamonds & reject duplicate unlock
+      const registeredUser = store.findUserById(regData.user.id)!;
+      registeredUser.diamonds += 50;
 
-      // 7. Duplicate unique item order should be rejected
-      const dupOrderRes = await fetch(`${base}/api/payments/orders`, {
+      const buyRes = await fetch(`${base}/api/shop/purchase`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          orderType: 'SHOP_PRODUCT',
-          referenceId: 'pb_noir_penthouse',
-          provider: 'PAYME',
-        }),
+        body: JSON.stringify({ productId: 'fn_role_unlock_detective', currency: 'DIAMONDS' }),
       });
-      expect(dupOrderRes.status).toBe(400);
+      expect(buyRes.status).toBe(200);
 
-      // 8. Verify inventory & equip toggle
+      const dupPurchaseRes = await fetch(`${base}/api/shop/purchase`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ productId: 'fn_role_unlock_detective', currency: 'DIAMONDS' }),
+      });
+      expect(dupPurchaseRes.status).toBe(400);
+
+      // 8. Verify functional inventory & unlockedRoles
       const invRes = await fetch(`${base}/api/inventory`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const invData = await invRes.json();
-      expect(invData.items.some((i: { id: string }) => i.id === 'pb_noir_penthouse')).toBe(true);
+      expect(invData.functionalItems.some((i: { productId: string }) => i.productId === 'fn_role_unlock_detective')).toBe(true);
+      expect(invData.unlockedRoles).toContain('detective');
 
-      // 9. Request refund & verify admin approval revokes item
-      const refReq = await fetch(`${base}/api/payments/orders/${prodOrderData.order.id}/refund-request`, {
+      // 9. Request refund on VIP order & verify admin approval
+      const refReq = await fetch(`${base}/api/payments/orders/${vipOrderData.order.id}/refund-request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ reason: 'Test refund' }),
       });
       expect(refReq.status).toBe(200);
-      const resolved = store.adminResolveRefund(prodOrderData.order.id, true, {
+      const resolved = store.adminResolveRefund(vipOrderData.order.id, true, {
         id: 'usr_admin',
         username: 'DonCorleone',
       });

@@ -8,7 +8,7 @@ import { RoleCard } from './RoleCard';
 import cardBackImg from '../assets/images/mafia_card_back_1794372514453.jpg';
 
 export const RoleRevealModal: React.FC = () => {
-  const { roomState, page, lang, t, soundEnabled, uiVolume, ambientVolume } = useApp();
+  const { roomState, page, lang, t, soundEnabled, uiVolume, ambientVolume, roleConfigs } = useApp();
   const [visible, setVisible] = useState(false);
   const [flipped, setFlipped] = useState(false);
   const revealedRoundRef = useRef<string | null>(null);
@@ -104,6 +104,7 @@ export const RoleRevealModal: React.FC = () => {
                     lang={lang}
                     teamLabel={t.game.teams[role.team]}
                     abilityLabel={t.rolesPage.ability}
+                    roleConfigs={roleConfigs}
                     compact
                   />
                 </motion.div>

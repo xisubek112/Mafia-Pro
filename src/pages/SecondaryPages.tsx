@@ -48,27 +48,31 @@ import { ROLE_LIST, ROLES } from '../shared/roles';
 import { RARITY_LABELS, ROLE_VISUALS, RoleRarity } from '../shared/roleCards';
 import { ACHIEVEMENTS, TITLES } from '../shared/achievements';
 import { COUNTRIES, getCompetitiveRankName } from '../shared/ecosystem';
-import { GameHistoryRecord, ReplayRecord, Team, UserProfile } from '../shared/types';
+import { GameHistoryRecord, ReplayRecord, RoleId, Team, UserProfile } from '../shared/types';
+import { resolveEffectiveRoleMeta } from '../shared/roleArtwork';
 import { PWAInstallButton } from '../components/Navbar';
 import { RoleCard } from '../components/RoleCard';
+import { RolePortrait } from '../components/RolePortrait';
 import { AdminControlCenter } from './AdminControlCenter';
 
 export const RolesPage: React.FC = () => {
-  const { t, lang, user } = useApp();
+  const { t, lang, user, roleConfigs } = useApp();
   const [teamFilter, setTeamFilter] = useState<'ALL' | Team>('ALL');
   const [rarityFilter, setRarityFilter] = useState<'ALL' | RoleRarity>('ALL');
   const [search, setSearch] = useState('');
+  const [selectedRoleId, setSelectedRoleId] = useState<RoleId | null>(null);
 
   const filtered = ROLE_LIST.filter((r) => {
+    const meta = resolveEffectiveRoleMeta(r.id, lang, roleConfigs);
     const matchesTeam = teamFilter === 'ALL' || r.team === teamFilter;
     const spec = ROLE_VISUALS[r.id];
     const matchesRarity = rarityFilter === 'ALL' || spec.rarity === rarityFilter;
     const q = search.trim().toLowerCase();
     const matchesSearch =
       !q ||
-      r.name[lang].toLowerCase().includes(q) ||
-      r.shortDesc[lang].toLowerCase().includes(q) ||
-      r.abilityName[lang].toLowerCase().includes(q);
+      meta.name.toLowerCase().includes(q) ||
+      meta.shortDesc.toLowerCase().includes(q) ||
+      meta.abilityName.toLowerCase().includes(q);
     return matchesTeam && matchesRarity && matchesSearch;
   });
 
@@ -142,11 +146,83 @@ export const RolesPage: React.FC = () => {
               abilityLabel={t.rolesPage.ability}
               winLabel={t.rolesPage.winCond}
               limitsLabel={t.rolesPage.limits}
+              roleConfigs={roleConfigs}
               locked={Boolean(user && (user.rolePlayCounts?.[r.id] ?? 0) === 0)}
+              onClick={() => setSelectedRoleId(r.id)}
             />
           ))}
         </div>
       )}
+
+      {selectedRoleId && (() => {
+        const r = ROLES[selectedRoleId];
+        const spec = ROLE_VISUALS[selectedRoleId];
+        const rarity = RARITY_LABELS[spec.rarity];
+        const meta = resolveEffectiveRoleMeta(selectedRoleId, lang, roleConfigs);
+        return (
+          <div
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+            onClick={() => setSelectedRoleId(null)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-2xl rounded-2xl overflow-hidden border shadow-2xl grid sm:grid-cols-2"
+              style={{
+                background: spec.bgGradient,
+                borderColor: spec.borderColor,
+                boxShadow: `0 24px 60px -12px ${spec.glowColor}`,
+              }}
+            >
+              <RolePortrait
+                roleId={selectedRoleId}
+                roleConfigs={roleConfigs}
+                alt={meta.name}
+                lazy={false}
+                className="w-full aspect-square"
+              />
+              <div className="p-6 flex flex-col justify-between bg-[#090B12]/75">
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: rarity.color }}>
+                        {rarity[lang]} · {t.game.teams[r.team]}
+                      </p>
+                      <h2 className="font-display text-2xl font-extrabold text-[#F5F5F7] mt-0.5">
+                        {meta.name}
+                      </h2>
+                    </div>
+                    <button
+                      onClick={() => setSelectedRoleId(null)}
+                      className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[#F5F5F7]"
+                    >
+                      <XCircle className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-[#F5F5F7]/80 leading-relaxed">{meta.shortDesc}</p>
+                  <div className="pt-2 border-t border-white/10 space-y-2 text-xs">
+                    <div>
+                      <span className="font-semibold text-[#E7B65B]">{t.rolesPage.ability} ({meta.abilityName}): </span>
+                      <span className="text-[#F5F5F7]/85">{r.abilityDesc[lang]}</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-emerald-400">{t.rolesPage.winCond}: </span>
+                      <span className="text-[#F5F5F7]/80">{r.winCondition[lang]}</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-[#E63946]">{t.rolesPage.limits}: </span>
+                      <span className="text-[#F5F5F7]/75">{r.limitations[lang]}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-[11px] text-[#F5F5F7]/60">
+                  <span>{r.modes.join(' · ')}</span>
+                  <span className="font-mono">Min {r.minPlayers}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

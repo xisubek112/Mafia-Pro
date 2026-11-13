@@ -38,8 +38,8 @@ export const AiSupportModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
       sender: 'ai',
       text:
         lang === 'uz'
-          ? "Salom! Men MAFIA PRO sun'iy intellekt yordamchisiman. O‘yin qoidalari, 18+ rollar, VIP obuna, klanlar va do‘kon haqida istalgan savolingizga javob bera olaman."
-          : 'Здравствуйте! Я официальный AI-ассистент MAFIA PRO. Отвечу на любые вопросы по правилам, ролям, VIP-подписке, кланам и магазину.',
+          ? "Salom! Men DON AI — MAFIA PRO’ning rasmiy taktik yordamchisiman. O‘yin qoidalari, 18+ rollar, funksional do‘kon, VIP obuna, klanlar va turnirlar haqida istalgan savolingizga javob bera olaman."
+          : 'Здравствуйте! Я DON AI — официальный тактический советник MAFIA PRO. Отвечу на любые вопросы по правилам, ролям, функциональному магазину, VIP-подписке, кланам и турнирам.',
       timestamp: Date.now(),
     },
   ]);
@@ -107,10 +107,14 @@ export const AiSupportModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
     setIsTyping(true);
 
     try {
+      const history = messages
+        .filter((m) => m.id !== 'msg_welcome')
+        .slice(-6)
+        .map((m) => ({ sender: m.sender, text: m.text }));
       const res = await fetch('/api/support/ai-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, lang }),
+        body: JSON.stringify({ message: text, lang, history }),
       });
       const data = await res.json();
       setMessages((prev) => [
@@ -199,13 +203,13 @@ export const AiSupportModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-display text-base font-bold text-[#F5F5F7]">MAFIA PRO AI Assistant</h3>
+                <h3 className="font-display text-base font-bold text-[#F5F5F7]">DON AI</h3>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E7B65B]/20 text-[#E7B65B] border border-[#E7B65B]/30 flex items-center gap-1">
-                  <Sparkles className="w-2.5 h-2.5" /> 2.0 Gemini
+                  <Sparkles className="w-2.5 h-2.5" /> SYNDICATE AI
                 </span>
               </div>
               <p className="text-xs text-[#F5F5F7]/60">
-                {lang === 'uz' ? 'Qoidalar, rollar va yordam markazi' : 'Правила, роли и поддержка'}
+                {lang === 'uz' ? 'MAFIA PRO taktik yordamchi va qoidalar' : 'Тактический советник MAFIA PRO'}
               </p>
             </div>
           </div>

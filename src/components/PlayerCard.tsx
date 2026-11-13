@@ -30,7 +30,8 @@ import {
   Zap,
 } from 'lucide-react';
 import { ROLES } from '../shared/roles';
-import { Language, PublicPlayerView, RoleId, Team } from '../shared/types';
+import { Language, PublicPlayerView, RoleConfigOverride, RoleId, Team } from '../shared/types';
+import { RolePortrait } from './RolePortrait';
 
 interface PlayerCardProps {
   player: PublicPlayerView;
@@ -49,6 +50,7 @@ interface PlayerCardProps {
   isMafiaTeammate?: boolean;
   hasActedThisNight?: boolean;
   currentNightTargetId?: string;
+  roleConfigs?: RoleConfigOverride[];
   onSelectNight: () => void;
   onVote: () => void;
   onReport: () => void;
@@ -101,6 +103,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
   isMafiaTeammate,
   hasActedThisNight,
   currentNightTargetId,
+  roleConfigs,
   onSelectNight,
   onVote,
   onReport,
@@ -511,8 +514,15 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
             {player.revealedRoleId && (
               <>
                 <span aria-hidden="true">·</span>
-                <span className="text-[#FCD34D] font-semibold">
-                  {ROLES[player.revealedRoleId]?.name[lang] || player.revealedRoleId}
+                <span className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-[#E7B65B]/10 border border-[#E7B65B]/30 text-[#FCD34D] font-semibold">
+                  <RolePortrait
+                    roleId={player.revealedRoleId}
+                    roleConfigs={roleConfigs}
+                    lazy={false}
+                    showVignette={false}
+                    className="w-4 h-4 rounded-sm shrink-0"
+                  />
+                  <span>{ROLES[player.revealedRoleId]?.name[lang] || player.revealedRoleId}</span>
                 </span>
               </>
             )}
