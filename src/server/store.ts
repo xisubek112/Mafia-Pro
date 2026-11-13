@@ -13,18 +13,29 @@ import {
   getUtcWeekKey,
   MISSIONS,
 } from '../shared/ecosystem';
+import { createDefaultSeason1, DEFAULT_KNOWLEDGE_ARTICLES } from '../shared/ecosystemData';
 import {
   AchievementDef,
   AdminModuleId,
   AdminNotificationRecord,
   AdminRoleDef,
   AdminRoleSlug,
+  AiKnowledgeArticle,
   AuditLogEntry,
+  BattlePassLevel,
+  BattlePassReward,
+  ClanInvitation,
+  ClanMember,
+  ClanRecord,
+  ClanRole,
+  ConversationSummary,
   CosmeticCategory,
   CurrencyTransaction,
+  DirectMessage,
   GameHistoryRecord,
   GameMode,
   InventoryItemRecord,
+  MatchmakingTicket,
   ModerationReport,
   ModulePermissionSet,
   OrderRecord,
@@ -35,15 +46,27 @@ import {
   ProductCategory,
   PromoCampaign,
   PromoRedemptionRecord,
+  RankTier,
+  RatingHistoryEntry,
+  ReferralRecord,
+  ReplayEvent,
+  ReplayRecord,
   RoleConfigOverride,
   RoleId,
+  SeasonRecord,
+  SecurityEventRecord,
+  SecurityEventType,
   ShopProduct,
+  SpectatorSession,
   SubscriptionRecord,
+  SupportTicket,
   SystemEventRecord,
   Tournament,
   TournamentFormat,
   UserProfile,
+  UserSeasonProgress,
   VipPlan,
+  VoiceModerationEvent,
   WebsiteSettings,
 } from '../shared/types';
 
@@ -80,6 +103,20 @@ interface DatabaseSchema {
     defaultTimers: PhaseTimers;
     enabledModes: GameMode[];
   };
+  ratingHistory: RatingHistoryEntry[];
+  seasons: SeasonRecord[];
+  userSeasonProgress: UserSeasonProgress[];
+  clans: ClanRecord[];
+  clanInvitations: ClanInvitation[];
+  replays: ReplayRecord[];
+  directMessages: DirectMessage[];
+  spectatorSessions: SpectatorSession[];
+  voiceModerationEvents: VoiceModerationEvent[];
+  securityEvents: SecurityEventRecord[];
+  matchmakingQueue: MatchmakingTicket[];
+  referrals: ReferralRecord[];
+  aiKnowledgeArticles: AiKnowledgeArticle[];
+  supportTickets: SupportTicket[];
 }
 
 const DATA_DIR = path.resolve(process.cwd(), 'data');
@@ -154,10 +191,24 @@ function hydrateUser(u: Partial<StoredUser>): StoredUser {
     totalGames: u.totalGames ?? 0,
     wins: u.wins ?? 0,
     losses: u.losses ?? 0,
+    draws: u.draws ?? 0,
     weeklyWins: u.weeklyWins ?? 0,
     monthlyWins: u.monthlyWins ?? 0,
     winStreak: u.winStreak ?? 0,
     bestWinStreak: u.bestWinStreak ?? 0,
+    highestRating: u.highestRating ?? Math.max(u.rating ?? 1000, 1000),
+    modeRatings: u.modeRatings || {
+      CLASSIC: u.rating ?? 1000,
+      ADVANCED: u.rating ?? 1000,
+      CHAOS: u.rating ?? 1000,
+    },
+    totalPlaytimeSec: u.totalPlaytimeSec ?? ((u.totalGames ?? 0) * 360),
+    clanId: u.clanId,
+    clanTag: u.clanTag,
+    referralCode: u.referralCode || `MP-${(u.id || '').replace(/^usr_/, '').slice(0, 6).toUpperCase() || '7A9B2C'}`,
+    referredBy: u.referredBy,
+    successfulReferralsCount: u.successfulReferralsCount ?? 0,
+    claimedReferralMilestones: u.claimedReferralMilestones || [],
     favoriteRole: u.favoriteRole,
     favoriteMode: u.favoriteMode,
     rolePlayCounts: u.rolePlayCounts || {},
@@ -637,6 +688,94 @@ function createInitialDb(): DatabaseSchema {
       },
       enabledModes: ['CLASSIC', 'ADVANCED', 'CHAOS'],
     },
+    ratingHistory: [],
+    seasons: [createDefaultSeason1(now)],
+    userSeasonProgress: [],
+    clans: [
+      {
+        id: 'clan_don_corleone',
+        name: 'Corleone Oila',
+        tag: 'DON',
+        description: 'Oliy darajadagi strateglar va Don tarafdorlari.',
+        logoUrl: '',
+        leaderId: 'usr_admin',
+        leaderName: 'DonCorleone',
+        members: [
+          {
+            userId: 'usr_admin',
+            username: 'DonCorleone',
+            avatar: 'crimson',
+            role: 'LEADER',
+            joinedAt: now - 86400000 * 25,
+            rating: 1620,
+            contributionXp: 1200,
+          },
+        ],
+        memberLimit: 20,
+        level: 4,
+        totalRating: 1620,
+        announcements: [
+          {
+            id: 'ann_1',
+            author: 'DonCorleone',
+            text: 'Haftalik turnirga tayyorgarlik ko‘ring!',
+            createdAt: now - 86400000 * 2,
+          },
+        ],
+        createdAt: now - 86400000 * 25,
+      },
+      {
+        id: 'clan_sheriff_squad',
+        name: 'Tungi Adolat',
+        tag: 'JUST',
+        description: 'Shahar xavfsizligi va adolat posbonlari.',
+        logoUrl: '',
+        leaderId: 'usr_sheriff_uz',
+        leaderName: 'SherifTemur',
+        members: [
+          {
+            userId: 'usr_sheriff_uz',
+            username: 'SherifTemur',
+            avatar: 'gold',
+            role: 'LEADER',
+            joinedAt: now - 86400000 * 18,
+            rating: 1440,
+            contributionXp: 950,
+          },
+          {
+            userId: 'usr_violet_ru',
+            username: 'ShadowElena',
+            avatar: 'violet',
+            role: 'OFFICER',
+            joinedAt: now - 86400000 * 15,
+            rating: 1380,
+            contributionXp: 820,
+          },
+        ],
+        memberLimit: 20,
+        level: 3,
+        totalRating: 2820,
+        announcements: [
+          {
+            id: 'ann_2',
+            author: 'SherifTemur',
+            text: 'Har bir tergov muhim. Hushyor bo‘ling!',
+            createdAt: now - 86400000 * 1,
+          },
+        ],
+        createdAt: now - 86400000 * 18,
+      },
+    ],
+    clanInvitations: [],
+    replays: [],
+    directMessages: [],
+    spectatorSessions: [],
+    voiceModerationEvents: [],
+    securityEvents: [],
+    matchmakingQueue: [],
+    referrals: [],
+    aiKnowledgeArticles: DEFAULT_KNOWLEDGE_ARTICLES,
+    supportTickets: [],
   };
 }
 
@@ -650,7 +789,7 @@ class PersistentStore {
         const raw = fs.readFileSync(DB_FILE, 'utf8');
         const parsed = JSON.parse(raw) as Partial<DatabaseSchema>;
         const defaults = createInitialDb();
-        const needsEconomyMigration = !parsed.vipPlans || !parsed.shopProducts;
+        const needsEconomyMigration = !parsed.vipPlans || !parsed.shopProducts || !parsed.seasons || !parsed.clans;
         if (needsEconomyMigration) {
           this.createBackupSnapshot(raw);
         }
@@ -683,6 +822,23 @@ class PersistentStore {
           adminRoles: parsed.adminRoles && parsed.adminRoles.length > 0 ? parsed.adminRoles : defaults.adminRoles,
           systemEvents: parsed.systemEvents || defaults.systemEvents,
           serverConfig: parsed.serverConfig || defaults.serverConfig,
+          ratingHistory: parsed.ratingHistory || defaults.ratingHistory,
+          seasons: parsed.seasons && parsed.seasons.length > 0 ? parsed.seasons : defaults.seasons,
+          userSeasonProgress: parsed.userSeasonProgress || defaults.userSeasonProgress,
+          clans: parsed.clans && parsed.clans.length > 0 ? parsed.clans : defaults.clans,
+          clanInvitations: parsed.clanInvitations || defaults.clanInvitations,
+          replays: parsed.replays || defaults.replays,
+          directMessages: parsed.directMessages || defaults.directMessages,
+          spectatorSessions: parsed.spectatorSessions || defaults.spectatorSessions,
+          voiceModerationEvents: parsed.voiceModerationEvents || defaults.voiceModerationEvents,
+          securityEvents: parsed.securityEvents || defaults.securityEvents,
+          matchmakingQueue: parsed.matchmakingQueue || defaults.matchmakingQueue,
+          referrals: parsed.referrals || defaults.referrals,
+          aiKnowledgeArticles:
+            parsed.aiKnowledgeArticles && parsed.aiKnowledgeArticles.length > 0
+              ? parsed.aiKnowledgeArticles
+              : defaults.aiKnowledgeArticles,
+          supportTickets: parsed.supportTickets || defaults.supportTickets,
         };
         if (needsEconomyMigration) {
           this.save();
@@ -2494,6 +2650,1031 @@ class PersistentStore {
         .slice(0, 10)
         .map(([roleId, count]) => ({ roleId, count })),
       dailySeries: dailyBuckets,
+    };
+  }
+
+  // ====================================================
+  // 1. ELO RANKING & LEADERBOARD SYSTEM
+  // ====================================================
+  public recordRatingUpdate(
+    userId: string,
+    mode: GameMode,
+    delta: number,
+    matchId?: string,
+    reason: RatingHistoryEntry['reason'] = 'MATCH_WIN'
+  ): { user: StoredUser; entry: RatingHistoryEntry } | null {
+    const user = this.data.users.find((u) => u.id === userId);
+    if (!user) return null;
+
+    const oldRating = user.rating;
+    const newRating = Math.max(100, oldRating + delta);
+    user.rating = newRating;
+    user.highestRating = Math.max(user.highestRating ?? 1000, newRating);
+
+    if (!user.modeRatings) {
+      user.modeRatings = { CLASSIC: oldRating, ADVANCED: oldRating, CHAOS: oldRating };
+    }
+    const oldModeRating = user.modeRatings[mode] ?? oldRating;
+    user.modeRatings[mode] = Math.max(100, oldModeRating + delta);
+
+    const entry: RatingHistoryEntry = {
+      id: `rtg_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
+      userId,
+      username: user.username,
+      mode,
+      oldRating,
+      newRating,
+      delta,
+      matchId,
+      reason,
+      createdAt: Date.now(),
+    };
+    this.data.ratingHistory.push(entry);
+    this.save();
+    return { user, entry };
+  }
+
+  public getRatingHistory(userId: string): RatingHistoryEntry[] {
+    return this.data.ratingHistory
+      .filter((r) => r.userId === userId)
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, 50);
+  }
+
+  public getRankingsByMode(
+    mode?: GameMode,
+    period: 'GLOBAL' | 'WEEKLY' | 'MONTHLY' | 'SEASONAL' = 'GLOBAL'
+  ) {
+    let list = [...this.data.users].filter((u) => !u.isBanned);
+    if (period === 'WEEKLY') {
+      list.sort((a, b) => b.weeklyWins - a.weeklyWins || b.rating - a.rating);
+    } else if (period === 'MONTHLY') {
+      list.sort((a, b) => b.monthlyWins - a.monthlyWins || b.rating - a.rating);
+    } else {
+      if (mode) {
+        list.sort((a, b) => (b.modeRatings?.[mode] ?? b.rating) - (a.modeRatings?.[mode] ?? a.rating));
+      } else {
+        list.sort((a, b) => b.rating - a.rating || b.wins - a.wins);
+      }
+    }
+
+    return list.slice(0, 50).map((u, idx) => ({
+      rank: idx + 1,
+      id: u.id,
+      username: u.username,
+      avatar: u.avatar,
+      country: u.country,
+      level: u.level,
+      totalGames: u.totalGames,
+      tournamentPoints: u.tournamentPoints,
+      modeRatings: u.modeRatings,
+      rating: mode ? (u.modeRatings?.[mode] ?? u.rating) : u.rating,
+      highestRating: u.highestRating ?? u.rating,
+      wins: period === 'WEEKLY' ? u.weeklyWins : period === 'MONTHLY' ? u.monthlyWins : u.wins,
+      losses: u.losses,
+      clanTag: u.clanTag,
+      activeTitle: u.activeTitle,
+      subscription: u.subscription,
+    }));
+  }
+
+  public resetRankings(actor: { id: string; username: string }, reason: string): void {
+    for (const u of this.data.users) {
+      if (u.rating !== 1000) {
+        this.data.ratingHistory.push({
+          id: `rtg_rst_${Date.now()}_${u.id}`,
+          userId: u.id,
+          username: u.username,
+          mode: 'CLASSIC',
+          oldRating: u.rating,
+          newRating: 1000,
+          delta: 1000 - u.rating,
+          reason: 'ADMIN_RESET',
+          createdAt: Date.now(),
+        });
+        u.rating = 1000;
+        u.modeRatings = { CLASSIC: 1000, ADVANCED: 1000, CHAOS: 1000 };
+      }
+    }
+    this.addAuditLog(actor.id, actor.username, 'RANKINGS_RESET', `Competitive rankings reset: ${reason}`, 'CRITICAL');
+    this.save();
+  }
+
+  // ====================================================
+  // 2. SEASON & BATTLE PASS SYSTEM
+  // ====================================================
+  public getActiveSeason(): SeasonRecord {
+    const now = Date.now();
+    let active = this.data.seasons.find((s) => s.isActive && s.startsAt <= now && s.endsAt >= now);
+    if (!active) {
+      active = this.data.seasons[0];
+      if (!active) {
+        active = createDefaultSeason1(now);
+        this.data.seasons.push(active);
+        this.save();
+      }
+    }
+    return active;
+  }
+
+  public getSeasons(): SeasonRecord[] {
+    return this.data.seasons;
+  }
+
+  public getUserSeasonProgress(userId: string, seasonId?: string): UserSeasonProgress {
+    const sId = seasonId || this.getActiveSeason().id;
+    let prog = this.data.userSeasonProgress.find((p) => p.userId === userId && p.seasonId === sId);
+    if (!prog) {
+      prog = {
+        userId,
+        seasonId: sId,
+        currentLevel: 1,
+        currentXp: 0,
+        claimedFreeLevels: [],
+        claimedVipLevels: [],
+        completedMissions: [],
+      };
+      this.data.userSeasonProgress.push(prog);
+      this.save();
+    }
+    return prog;
+  }
+
+  public addSeasonXp(userId: string, xpAmount: number): { levelUp: boolean; newLevel: number; newXp: number } {
+    const season = this.getActiveSeason();
+    const prog = this.getUserSeasonProgress(userId, season.id);
+    prog.currentXp += xpAmount;
+
+    let levelUp = false;
+    const maxLevel = season.levels.length;
+    while (prog.currentLevel < maxLevel) {
+      const nextLvlReq = season.levels[prog.currentLevel - 1]?.xpRequired || (prog.currentLevel * season.totalXpPerLevel);
+      if (prog.currentXp >= nextLvlReq) {
+        prog.currentLevel += 1;
+        levelUp = true;
+      } else {
+        break;
+      }
+    }
+    this.save();
+    return { levelUp, newLevel: prog.currentLevel, newXp: prog.currentXp };
+  }
+
+  public claimBattlePassReward(
+    userId: string,
+    level: number,
+    track: 'FREE' | 'VIP'
+  ): { success: boolean; reward?: BattlePassReward; error?: string } {
+    const user = this.data.users.find((u) => u.id === userId);
+    if (!user) return { success: false, error: 'User not found' };
+
+    const season = this.getActiveSeason();
+    const prog = this.getUserSeasonProgress(userId, season.id);
+
+    if (prog.currentLevel < level) {
+      return { success: false, error: 'Level not unlocked yet' };
+    }
+
+    const lvlConfig = season.levels.find((l) => l.level === level);
+    if (!lvlConfig) return { success: false, error: 'Invalid level' };
+
+    if (track === 'VIP') {
+      const isVip = user.subscription?.status === 'ACTIVE' || user.role === 'ADMIN';
+      if (!isVip) {
+        return { success: false, error: 'VIP membership required for this reward track' };
+      }
+      if (prog.claimedVipLevels.includes(level)) {
+        return { success: false, error: 'Reward already claimed' };
+      }
+      prog.claimedVipLevels.push(level);
+      const reward = lvlConfig.vipReward;
+      this.grantRewardToUser(user, reward);
+      this.save();
+      return { success: true, reward };
+    } else {
+      if (prog.claimedFreeLevels.includes(level)) {
+        return { success: false, error: 'Reward already claimed' };
+      }
+      prog.claimedFreeLevels.push(level);
+      const reward = lvlConfig.freeReward;
+      this.grantRewardToUser(user, reward);
+      this.save();
+      return { success: true, reward };
+    }
+  }
+
+  private grantRewardToUser(user: StoredUser, reward: BattlePassReward) {
+    if (reward.type === 'GOLD' && reward.amount) {
+      user.gold += reward.amount;
+    } else if (reward.type === 'DIAMONDS' && reward.amount) {
+      user.diamonds += reward.amount;
+    } else if (reward.type === 'AVATAR' || reward.type === 'FRAME' || reward.type === 'BADGE') {
+      if (reward.itemId && !user.ownedCosmetics.includes(reward.itemId)) {
+        user.ownedCosmetics.push(reward.itemId);
+      }
+    } else if (reward.type === 'VIP_DAYS' && reward.amount) {
+      const now = Date.now();
+      const currentExpiry = user.subscription?.expiresAt && user.subscription.expiresAt > now ? user.subscription.expiresAt : now;
+      user.subscription = {
+        tier: 'ELITE',
+        status: 'ACTIVE',
+        verified: true,
+        expiresAt: currentExpiry + reward.amount * 86400000,
+      };
+    }
+  }
+
+  // ====================================================
+  // 3. CLAN / GUILD SYSTEM
+  // ====================================================
+  public createClan(
+    userId: string,
+    name: string,
+    tag: string,
+    description: string,
+    logoUrl = ''
+  ): { success: boolean; clan?: ClanRecord; error?: string } {
+    const user = this.data.users.find((u) => u.id === userId);
+    if (!user) return { success: false, error: 'User not found' };
+    if (user.clanId) return { success: false, error: 'You are already in a clan. Leave current clan first.' };
+
+    const cleanTag = tag.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (cleanTag.length < 2 || cleanTag.length > 5) {
+      return { success: false, error: 'Clan tag must be 2-5 alphanumeric characters' };
+    }
+    const cleanName = name.trim();
+    if (cleanName.length < 3 || cleanName.length > 30) {
+      return { success: false, error: 'Clan name must be between 3 and 30 characters' };
+    }
+
+    const tagExists = this.data.clans.some((c) => c.tag === cleanTag);
+    if (tagExists) return { success: false, error: 'Clan tag is already taken' };
+
+    const nameExists = this.data.clans.some((c) => c.name.toLowerCase() === cleanName.toLowerCase());
+    if (nameExists) return { success: false, error: 'Clan name is already taken' };
+
+    // Cost: 500 Gold (free for admins)
+    if (user.role !== 'ADMIN' && user.gold < 500) {
+      return { success: false, error: 'Creating a clan costs 500 Gold' };
+    }
+    if (user.role !== 'ADMIN') user.gold -= 500;
+
+    const clanId = `clan_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
+    const newClan: ClanRecord = {
+      id: clanId,
+      name: cleanName,
+      tag: cleanTag,
+      description: description.trim() || 'Mafia Pro oilasi.',
+      logoUrl,
+      leaderId: user.id,
+      leaderName: user.username,
+      members: [
+        {
+          userId: user.id,
+          username: user.username,
+          avatar: user.avatar,
+          role: 'LEADER',
+          joinedAt: Date.now(),
+          rating: user.rating,
+          contributionXp: 0,
+        },
+      ],
+      memberLimit: 20,
+      level: 1,
+      totalRating: user.rating,
+      announcements: [
+        {
+          id: `ann_${Date.now()}`,
+          author: user.username,
+          text: `Klan yaratildi! Xush kelibsiz [${cleanTag}] ${cleanName}`,
+          createdAt: Date.now(),
+        },
+      ],
+      createdAt: Date.now(),
+    };
+
+    this.data.clans.push(newClan);
+    user.clanId = clanId;
+    user.clanTag = cleanTag;
+
+    // Check clan member achievement
+    if (!user.achievements.includes('clan_member')) {
+      user.achievements.push('clan_member');
+      user.gold += 200;
+      user.xp += 350;
+    }
+
+    this.save();
+    return { success: true, clan: newClan };
+  }
+
+  public getClans(): ClanRecord[] {
+    return this.data.clans
+      .filter((c) => !c.isSuspended)
+      .map((c) => ({
+        ...c,
+        totalRating: c.members.reduce((sum, m) => sum + m.rating, 0),
+      }))
+      .sort((a, b) => b.totalRating - a.totalRating);
+  }
+
+  public getClanById(clanId: string): ClanRecord | null {
+    return this.data.clans.find((c) => c.id === clanId) || null;
+  }
+
+  public sendClanInvite(
+    clanId: string,
+    inviterId: string,
+    inviteeId: string
+  ): { success: boolean; invitation?: ClanInvitation; error?: string } {
+    const clan = this.data.clans.find((c) => c.id === clanId);
+    if (!clan) return { success: false, error: 'Clan not found' };
+
+    const inviterMember = clan.members.find((m) => m.userId === inviterId);
+    if (!inviterMember || (inviterMember.role !== 'LEADER' && inviterMember.role !== 'OFFICER')) {
+      return { success: false, error: 'Only clan leader or officers can invite new members' };
+    }
+
+    if (clan.members.length >= clan.memberLimit) {
+      return { success: false, error: 'Clan is currently full' };
+    }
+
+    const invitee = this.data.users.find((u) => u.id === inviteeId);
+    if (!invitee) return { success: false, error: 'Target player not found' };
+    if (invitee.clanId) return { success: false, error: 'Player is already in a clan' };
+
+    const existingPending = this.data.clanInvitations.find(
+      (i) => i.clanId === clanId && i.inviteeId === inviteeId && i.status === 'PENDING'
+    );
+    if (existingPending) return { success: false, error: 'Invite already sent to this player' };
+
+    const inv: ClanInvitation = {
+      id: `cinv_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`,
+      clanId,
+      clanName: clan.name,
+      clanTag: clan.tag,
+      inviterId,
+      inviterName: inviterMember.username,
+      inviteeId,
+      inviteeName: invitee.username,
+      status: 'PENDING',
+      createdAt: Date.now(),
+    };
+    this.data.clanInvitations.push(inv);
+    this.save();
+    return { success: true, invitation: inv };
+  }
+
+  public getClanInvitationsForUser(userId: string): ClanInvitation[] {
+    return this.data.clanInvitations.filter((i) => i.inviteeId === userId && i.status === 'PENDING');
+  }
+
+  public respondClanInvite(
+    inviteId: string,
+    userId: string,
+    accept: boolean
+  ): { success: boolean; clan?: ClanRecord; error?: string } {
+    const inv = this.data.clanInvitations.find((i) => i.id === inviteId && i.inviteeId === userId);
+    if (!inv || inv.status !== 'PENDING') return { success: false, error: 'Invitation not found or expired' };
+
+    if (!accept) {
+      inv.status = 'REJECTED';
+      this.save();
+      return { success: true };
+    }
+
+    const clan = this.data.clans.find((c) => c.id === inv.clanId);
+    if (!clan) return { success: false, error: 'Clan no longer exists' };
+    if (clan.members.length >= clan.memberLimit) return { success: false, error: 'Clan is full' };
+
+    const user = this.data.users.find((u) => u.id === userId);
+    if (!user) return { success: false, error: 'User not found' };
+    if (user.clanId) return { success: false, error: 'You are already in a clan' };
+
+    inv.status = 'ACCEPTED';
+    clan.members.push({
+      userId: user.id,
+      username: user.username,
+      avatar: user.avatar,
+      role: 'MEMBER',
+      joinedAt: Date.now(),
+      rating: user.rating,
+      contributionXp: 0,
+    });
+    clan.totalRating = clan.members.reduce((s, m) => s + m.rating, 0);
+
+    user.clanId = clan.id;
+    user.clanTag = clan.tag;
+
+    if (!user.achievements.includes('clan_member')) {
+      user.achievements.push('clan_member');
+      user.gold += 200;
+      user.xp += 350;
+    }
+
+    this.save();
+    return { success: true, clan };
+  }
+
+  public leaveClan(userId: string): { success: boolean; error?: string } {
+    const user = this.data.users.find((u) => u.id === userId);
+    if (!user || !user.clanId) return { success: false, error: 'Not in a clan' };
+
+    const clan = this.data.clans.find((c) => c.id === user.clanId);
+    if (!clan) {
+      user.clanId = undefined;
+      user.clanTag = undefined;
+      this.save();
+      return { success: true };
+    }
+
+    const memberIdx = clan.members.findIndex((m) => m.userId === userId);
+    if (memberIdx === -1) return { success: false, error: 'Member record missing' };
+
+    const wasLeader = clan.members[memberIdx].role === 'LEADER';
+    clan.members.splice(memberIdx, 1);
+
+    user.clanId = undefined;
+    user.clanTag = undefined;
+
+    if (clan.members.length === 0) {
+      // Disband empty clan
+      this.data.clans = this.data.clans.filter((c) => c.id !== clan.id);
+    } else if (wasLeader) {
+      // Promote officer or oldest member to leader
+      const newLeader = clan.members.find((m) => m.role === 'OFFICER') || clan.members[0];
+      newLeader.role = 'LEADER';
+      clan.leaderId = newLeader.userId;
+      clan.leaderName = newLeader.username;
+    }
+    clan.totalRating = clan.members.reduce((s, m) => s + m.rating, 0);
+    this.save();
+    return { success: true };
+  }
+
+  public addClanAnnouncement(clanId: string, authorId: string, text: string): boolean {
+    const clan = this.data.clans.find((c) => c.id === clanId);
+    if (!clan) return false;
+    const author = clan.members.find((m) => m.userId === authorId);
+    if (!author || author.role === 'MEMBER') return false;
+
+    clan.announcements.unshift({
+      id: `ann_${Date.now()}`,
+      author: author.username,
+      text: text.trim().slice(0, 300),
+      createdAt: Date.now(),
+    });
+    if (clan.announcements.length > 20) clan.announcements.pop();
+    this.save();
+    return true;
+  }
+
+  // ====================================================
+  // 4. MATCH REPLAY SYSTEM
+  // ====================================================
+  public saveReplay(record: ReplayRecord): void {
+    // Keep max 200 recent replays
+    this.data.replays.unshift(record);
+    if (this.data.replays.length > 200) {
+      this.data.replays.pop();
+    }
+    this.save();
+  }
+
+  public getReplays(userId?: string): Omit<ReplayRecord, 'events'>[] {
+    let list = this.data.replays;
+    if (userId) {
+      list = list.filter((r) => r.players.some((p) => p.userId === userId));
+    }
+    return list.slice(0, 30).map(({ events: _ev, ...meta }) => meta);
+  }
+
+  public getReplayById(replayId: string): ReplayRecord | null {
+    return (
+      this.data.replays.find((r) => r.id === replayId || r.matchId === replayId || r.roomCode === replayId) || null
+    );
+  }
+
+  // ====================================================
+  // 5. PRIVATE MESSAGING SYSTEM (1-on-1)
+  // ====================================================
+  public sendDirectMessage(
+    senderId: string,
+    recipientId: string,
+    text: string
+  ): { success: boolean; message?: DirectMessage; error?: string } {
+    const sender = this.data.users.find((u) => u.id === senderId);
+    const recipient = this.data.users.find((u) => u.id === recipientId);
+    if (!sender || !recipient) return { success: false, error: 'User not found' };
+
+    if (recipient.blockedUsers.includes(senderId) || sender.blockedUsers.includes(recipientId)) {
+      return { success: false, error: 'Cannot send message to this user' };
+    }
+
+    const cleanText = text.trim().slice(0, 1000);
+    if (!cleanText) return { success: false, error: 'Message cannot be empty' };
+
+    const dm: DirectMessage = {
+      id: `dm_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`,
+      senderId,
+      senderName: sender.username,
+      senderAvatar: sender.avatar,
+      recipientId,
+      recipientName: recipient.username,
+      text: cleanText,
+      read: false,
+      createdAt: Date.now(),
+    };
+    this.data.directMessages.push(dm);
+    // Keep up to 2000 recent DMs
+    if (this.data.directMessages.length > 2000) {
+      this.data.directMessages.shift();
+    }
+    this.save();
+    return { success: true, message: dm };
+  }
+
+  public getDirectMessages(user1Id: string, user2Id: string): DirectMessage[] {
+    const msgs = this.data.directMessages.filter(
+      (m) =>
+        (m.senderId === user1Id && m.recipientId === user2Id) ||
+        (m.senderId === user2Id && m.recipientId === user1Id)
+    );
+    // Mark as read for current viewer
+    let updated = false;
+    for (const m of msgs) {
+      if (m.recipientId === user1Id && !m.read) {
+        m.read = true;
+        updated = true;
+      }
+    }
+    if (updated) this.save();
+    return msgs.sort((a, b) => a.createdAt - b.createdAt);
+  }
+
+  public getConversations(userId: string): ConversationSummary[] {
+    const partners = new Map<string, { lastMsg: DirectMessage; unread: number }>();
+    for (const m of this.data.directMessages) {
+      if (m.senderId === userId || m.recipientId === userId) {
+        const partnerId = m.senderId === userId ? m.recipientId : m.senderId;
+        const existing = partners.get(partnerId);
+        const isUnread = m.recipientId === userId && !m.read;
+        if (!existing || m.createdAt > existing.lastMsg.createdAt) {
+          partners.set(partnerId, {
+            lastMsg: m,
+            unread: (existing?.unread || 0) + (isUnread ? 1 : 0),
+          });
+        } else if (isUnread) {
+          existing.unread += 1;
+        }
+      }
+    }
+
+    const summaries: ConversationSummary[] = [];
+    for (const [partnerId, info] of partners.entries()) {
+      const partnerUser = this.data.users.find((u) => u.id === partnerId);
+      if (partnerUser) {
+        summaries.push({
+          partnerId,
+          partnerName: partnerUser.username,
+          partnerAvatar: partnerUser.avatar,
+          isOnline: partnerUser.lastSeenAt >= Date.now() - 120000,
+          lastMessage: info.lastMsg.text,
+          lastMessageAt: info.lastMsg.createdAt,
+          unreadCount: info.unread,
+        });
+      }
+    }
+    return summaries.sort((a, b) => b.lastMessageAt - a.lastMessageAt);
+  }
+
+  // ====================================================
+  // 6. SPECTATOR & VOICE SESSIONS
+  // ====================================================
+  public addSpectator(roomCode: string, userId: string, username: string): void {
+    if (!this.data.spectatorSessions.some((s) => s.roomCode === roomCode && s.userId === userId)) {
+      this.data.spectatorSessions.push({ roomCode, userId, username, joinedAt: Date.now() });
+    }
+  }
+
+  public removeSpectator(roomCode: string, userId: string): void {
+    this.data.spectatorSessions = this.data.spectatorSessions.filter(
+      (s) => !(s.roomCode === roomCode && s.userId === userId)
+    );
+  }
+
+  public getSpectatorCount(roomCode: string): number {
+    return this.data.spectatorSessions.filter((s) => s.roomCode === roomCode).length;
+  }
+
+  public logVoiceModeration(
+    roomCode: string,
+    targetUserId: string,
+    targetUsername: string,
+    action: VoiceModerationEvent['action'],
+    moderatorId: string
+  ): VoiceModerationEvent {
+    const ev: VoiceModerationEvent = {
+      id: `vme_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`,
+      roomCode,
+      targetUserId,
+      targetUsername,
+      action,
+      moderatorId,
+      createdAt: Date.now(),
+    };
+    this.data.voiceModerationEvents.push(ev);
+    this.save();
+    return ev;
+  }
+
+  public getVoiceModerationEvents(roomCode?: string): VoiceModerationEvent[] {
+    let list = this.data.voiceModerationEvents;
+    if (roomCode) list = list.filter((e) => e.roomCode === roomCode);
+    return list.slice(-50).reverse();
+  }
+
+  // ====================================================
+  // 7. ANTI-CHEAT & SECURITY EVENT MONITOR
+  // ====================================================
+  public logSecurityEvent(
+    userId: string,
+    username: string,
+    ip: string,
+    type: SecurityEventType,
+    severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL',
+    details: string
+  ): SecurityEventRecord {
+    const rec: SecurityEventRecord = {
+      id: `sec_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`,
+      userId,
+      username,
+      ip,
+      type,
+      severity,
+      details,
+      status: 'PENDING',
+      createdAt: Date.now(),
+    };
+    this.data.securityEvents.unshift(rec);
+    if (this.data.securityEvents.length > 500) this.data.securityEvents.pop();
+
+    // Check critical threshold
+    if (severity === 'CRITICAL') {
+      const recentCrit = this.data.securityEvents.filter(
+        (e) => e.userId === userId && e.severity === 'CRITICAL' && e.createdAt >= Date.now() - 3600000
+      );
+      if (recentCrit.length >= 3) {
+        const u = this.data.users.find((user) => user.id === userId);
+        if (u) {
+          u.isFlagged = true;
+          u.flagReason = `Automated anti-cheat safeguard: ${details}`;
+        }
+      }
+    }
+    this.save();
+    return rec;
+  }
+
+  public getSecurityEvents(status?: string): SecurityEventRecord[] {
+    let list = this.data.securityEvents;
+    if (status && status !== 'ALL') {
+      list = list.filter((e) => e.status === status);
+    }
+    return list.slice(0, 100);
+  }
+
+  public reviewSecurityEvent(
+    eventId: string,
+    adminId: string,
+    status: 'REVIEWED' | 'DISMISSED' | 'ACTIONED',
+    note?: string
+  ): boolean {
+    const ev = this.data.securityEvents.find((e) => e.id === eventId);
+    if (!ev) return false;
+    ev.status = status;
+    ev.reviewedBy = adminId;
+    ev.actionNote = note;
+    this.save();
+    return true;
+  }
+
+  // ====================================================
+  // 8. SMART MATCHMAKING QUEUE
+  // ====================================================
+  public enqueueMatchmaking(ticket: MatchmakingTicket): boolean {
+    this.data.matchmakingQueue = this.data.matchmakingQueue.filter((t) => t.userId !== ticket.userId);
+    this.data.matchmakingQueue.push(ticket);
+    return true;
+  }
+
+  public dequeueMatchmaking(userId: string): boolean {
+    const len = this.data.matchmakingQueue.length;
+    this.data.matchmakingQueue = this.data.matchmakingQueue.filter((t) => t.userId !== userId);
+    return this.data.matchmakingQueue.length !== len;
+  }
+
+  public getMatchmakingQueue(): MatchmakingTicket[] {
+    return this.data.matchmakingQueue;
+  }
+
+  public findMatches(mode: GameMode, minPlayers = 4): MatchmakingTicket[] | null {
+    const candidates = this.data.matchmakingQueue.filter((t) => t.mode === mode);
+    if (candidates.length < minPlayers) return null;
+
+    // Expanding bracket logic: calculate difference
+    candidates.sort((a, b) => a.rating - b.rating);
+    for (let i = 0; i <= candidates.length - minPlayers; i++) {
+      const group = candidates.slice(i, i + minPlayers);
+      const minR = Math.min(...group.map((g) => g.rating));
+      const maxR = Math.max(...group.map((g) => g.rating));
+      // Max rating spread allowed: 350 + (wait seconds * 10)
+      const oldestWaitSec = Math.floor((Date.now() - Math.min(...group.map((g) => g.queuedAt))) / 1000);
+      const allowedSpread = 300 + Math.min(oldestWaitSec * 15, 600);
+      if (maxR - minR <= allowedSpread) {
+        // Remove from queue and return matched group
+        const matchedIds = new Set(group.map((g) => g.userId));
+        this.data.matchmakingQueue = this.data.matchmakingQueue.filter((t) => !matchedIds.has(t.userId));
+        return group;
+      }
+    }
+    return null;
+  }
+
+  // ====================================================
+  // 9. REFERRAL & AFFILIATE SYSTEM
+  // ====================================================
+  public getReferralCode(user: StoredUser): string {
+    if (!user.referralCode) {
+      user.referralCode = `MP-${user.id.replace(/^usr_/, '').slice(0, 6).toUpperCase() || '7A9B2C'}`;
+      this.save();
+    }
+    return user.referralCode;
+  }
+
+  public applyReferralCode(
+    newUserId: string,
+    code: string
+  ): { success: boolean; referrerName?: string; error?: string } {
+    const newUser = this.data.users.find((u) => u.id === newUserId);
+    if (!newUser) return { success: false, error: 'User not found' };
+    if (newUser.referredBy) return { success: false, error: 'Referral code already applied' };
+
+    const cleanCode = code.trim().toUpperCase();
+    const referrer = this.data.users.find(
+      (u) => (u.referralCode && u.referralCode.toUpperCase() === cleanCode) || `MP-${u.username.toUpperCase()}` === cleanCode
+    );
+    if (!referrer) return { success: false, error: 'Invalid referral code' };
+    if (referrer.id === newUserId) return { success: false, error: 'Cannot refer yourself' };
+
+    newUser.referredBy = referrer.id;
+    referrer.successfulReferralsCount = (referrer.successfulReferralsCount || 0) + 1;
+
+    // Welcome bonus for new user
+    newUser.gold += 150;
+    newUser.xp += 100;
+
+    // Record referral entry
+    this.data.referrals.push({
+      id: `ref_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`,
+      referrerId: referrer.id,
+      referrerUsername: referrer.username,
+      referredUserId: newUser.id,
+      referredUsername: newUser.username,
+      status: 'QUALIFIED',
+      registeredAt: Date.now(),
+      qualifiedAt: Date.now(),
+      rewardClaimed: false,
+    });
+
+    // Check referral inviter achievement
+    if (!referrer.achievements.includes('referral_inviter')) {
+      referrer.achievements.push('referral_inviter');
+      referrer.gold += 250;
+      referrer.diamonds += 5;
+    }
+
+    this.save();
+    return { success: true, referrerName: referrer.username };
+  }
+
+  public claimReferralMilestone(
+    userId: string,
+    milestoneLevel: number
+  ): { success: boolean; reward?: string; error?: string } {
+    const user = this.data.users.find((u) => u.id === userId);
+    if (!user) return { success: false, error: 'User not found' };
+
+    const count = user.successfulReferralsCount || 0;
+    if (!user.claimedReferralMilestones) user.claimedReferralMilestones = [];
+
+    if (user.claimedReferralMilestones.includes(milestoneLevel)) {
+      return { success: false, error: 'Milestone already claimed' };
+    }
+
+    if (milestoneLevel === 1) {
+      if (count < 1) return { success: false, error: 'Need 1 referral' };
+      user.claimedReferralMilestones.push(1);
+      user.gold += 250;
+      user.diamonds += 2;
+      this.save();
+      return { success: true, reward: '250 Oltin + 2 Olmos' };
+    } else if (milestoneLevel === 3) {
+      if (count < 3) return { success: false, error: 'Need 3 referrals' };
+      user.claimedReferralMilestones.push(3);
+      user.gold += 600;
+      user.diamonds += 10;
+      if (!user.ownedCosmetics.includes('fr_crimson_edge')) {
+        user.ownedCosmetics.push('fr_crimson_edge');
+      }
+      this.save();
+      return { success: true, reward: '600 Oltin + 10 Olmos + Qonli Chegara Ramkasi' };
+    } else if (milestoneLevel === 5) {
+      if (count < 5) return { success: false, error: 'Need 5 referrals' };
+      user.claimedReferralMilestones.push(5);
+      user.gold += 1500;
+      user.diamonds += 25;
+      // 7 Days VIP
+      const now = Date.now();
+      const currentExp = user.subscription?.expiresAt && user.subscription.expiresAt > now ? user.subscription.expiresAt : now;
+      user.subscription = {
+        tier: 'ELITE',
+        status: 'ACTIVE',
+        verified: true,
+        expiresAt: currentExp + 7 * 86400000,
+      };
+      this.save();
+      return { success: true, reward: '1,500 Oltin + 25 Olmos + 7 Kunlik VIP Obuna' };
+    }
+    return { success: false, error: 'Unknown milestone' };
+  }
+
+  public getReferralsForUser(userId: string): ReferralRecord[] {
+    return this.data.referrals.filter((r) => r.referrerId === userId);
+  }
+
+  // ====================================================
+  // 10. AI SUPPORT KNOWLEDGE & ESCALATION TICKETS
+  // ====================================================
+  public getAiKnowledgeArticles(query?: string, category?: string): AiKnowledgeArticle[] {
+    let list = this.data.aiKnowledgeArticles;
+    if (category && category !== 'ALL') {
+      list = list.filter((a) => a.category === category);
+    }
+    if (query && query.trim()) {
+      const q = query.trim().toLowerCase();
+      list = list.filter(
+        (a) =>
+          a.title.uz.toLowerCase().includes(q) ||
+          a.title.ru.toLowerCase().includes(q) ||
+          a.content.uz.toLowerCase().includes(q) ||
+          a.content.ru.toLowerCase().includes(q) ||
+          a.tags.some((t) => t.toLowerCase().includes(q))
+      );
+    }
+    return list;
+  }
+
+  public createSupportTicket(
+    userId: string,
+    username: string,
+    subject: string,
+    description: string,
+    priority: SupportTicket['priority'] = 'NORMAL'
+  ): SupportTicket {
+    const ticket: SupportTicket = {
+      id: `tkt_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`,
+      userId,
+      username,
+      subject: subject.trim().slice(0, 150),
+      description: description.trim().slice(0, 2000),
+      status: 'OPEN',
+      priority,
+      responses: [
+        {
+          id: `tresp_${Date.now()}`,
+          authorId: userId,
+          authorName: username,
+          isStaff: false,
+          message: description.trim(),
+          createdAt: Date.now(),
+        },
+      ],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    this.data.supportTickets.unshift(ticket);
+    this.save();
+    return ticket;
+  }
+
+  public addSupportTicketResponse(
+    ticketId: string,
+    authorId: string,
+    authorName: string,
+    isStaff: boolean,
+    message: string
+  ): boolean {
+    const ticket = this.data.supportTickets.find((t) => t.id === ticketId);
+    if (!ticket) return false;
+
+    ticket.responses.push({
+      id: `tresp_${Date.now()}`,
+      authorId,
+      authorName,
+      isStaff,
+      message: message.trim().slice(0, 2000),
+      createdAt: Date.now(),
+    });
+    if (isStaff && ticket.status === 'OPEN') {
+      ticket.status = 'IN_PROGRESS';
+    }
+    ticket.updatedAt = Date.now();
+    this.save();
+    return true;
+  }
+
+  public getSupportTickets(userId?: string): SupportTicket[] {
+    if (userId) {
+      return this.data.supportTickets.filter((t) => t.userId === userId);
+    }
+    return this.data.supportTickets;
+  }
+
+  // ====================================================
+  // 11. DETAILED PLAYER STATISTICS
+  // ====================================================
+  public getDetailedPlayerStats(userId: string) {
+    const user = this.data.users.find((u) => u.id === userId);
+    if (!user) return null;
+
+    const matches = this.data.history.filter((h) => h.players.some((p) => p.userId === userId));
+    const totalMatches = matches.length || user.totalGames || 0;
+    const wins = user.wins || 0;
+    const losses = user.losses || 0;
+    const draws = user.draws || 0;
+    const winRate = totalMatches > 0 ? Math.round((wins / totalMatches) * 100) : 0;
+
+    const roleStats: Record<string, { played: number; won: number }> = {};
+    for (const m of matches) {
+      const pl = m.players.find((p) => p.userId === userId);
+      if (pl) {
+        if (!roleStats[pl.roleId]) roleStats[pl.roleId] = { played: 0, won: 0 };
+        roleStats[pl.roleId].played += 1;
+        if (pl.won) roleStats[pl.roleId].won += 1;
+      }
+    }
+
+    // 30-day performance trend
+    const dayMs = 86400000;
+    const now = Date.now();
+    const trend = [];
+    for (let i = 29; i >= 0; i--) {
+      const start = now - (i + 1) * dayMs;
+      const end = now - i * dayMs;
+      const dayMatches = matches.filter((m) => m.endedAt >= start && m.endedAt < end);
+      const dayWins = dayMatches.filter((m) => m.players.some((p) => p.userId === userId && p.won)).length;
+      trend.push({
+        date: new Date(end).toLocaleDateString('uz-UZ', { month: 'short', day: 'numeric' }),
+        matches: dayMatches.length,
+        wins: dayWins,
+      });
+    }
+
+    const clan = user.clanId ? this.getClanById(user.clanId) : null;
+
+    return {
+      userId: user.id,
+      username: user.username,
+      avatar: user.avatar,
+      country: user.country,
+      level: user.level,
+      xp: user.xp,
+      rating: user.rating,
+      highestRating: user.highestRating ?? user.rating,
+      modeRatings: user.modeRatings,
+      totalGames: totalMatches,
+      wins,
+      losses,
+      draws,
+      winRate,
+      winStreak: user.winStreak,
+      bestWinStreak: user.bestWinStreak,
+      favoriteRole: user.favoriteRole,
+      favoriteMode: user.favoriteMode,
+      totalPlaytimeSec: user.totalPlaytimeSec ?? totalMatches * 360,
+      clan: clan
+        ? {
+            id: clan.id,
+            name: clan.name,
+            tag: clan.tag,
+            level: clan.level,
+            role: clan.members.find((m) => m.userId === userId)?.role || 'MEMBER',
+          }
+        : null,
+      rolePerformance: roleStats,
+      trend,
+      recentHistory: matches.slice(0, 15),
     };
   }
 }

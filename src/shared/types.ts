@@ -294,10 +294,20 @@ export interface UserProfile {
   totalGames: number;
   wins: number;
   losses: number;
+  draws?: number;
   weeklyWins: number;
   monthlyWins: number;
   winStreak: number;
   bestWinStreak: number;
+  highestRating?: number;
+  modeRatings?: Partial<Record<GameMode, number>>;
+  totalPlaytimeSec?: number;
+  clanId?: string;
+  clanTag?: string;
+  referralCode?: string;
+  referredBy?: string;
+  successfulReferralsCount?: number;
+  claimedReferralMilestones?: number[];
   favoriteRole?: RoleId;
   favoriteMode?: GameMode;
   rolePlayCounts: Record<string, number>;
@@ -730,4 +740,247 @@ export interface AdminOverview {
     enabledModes: GameMode[];
   };
 }
+
+// ----------------------------------------------------
+// ADVANCED GAMING ECOSYSTEM (15 FEATURES) SCHEMAS
+// ----------------------------------------------------
+
+export type RankTier = 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM' | 'DIAMOND' | 'MASTER' | 'GRANDMASTER';
+
+export interface RatingHistoryEntry {
+  id: string;
+  userId: string;
+  username: string;
+  mode: GameMode;
+  oldRating: number;
+  newRating: number;
+  delta: number;
+  matchId?: string;
+  reason: 'MATCH_WIN' | 'MATCH_LOSS' | 'MATCH_DRAW' | 'ADMIN_RESET' | 'SEASON_RESET';
+  createdAt: number;
+}
+
+export interface BattlePassReward {
+  type: 'GOLD' | 'DIAMONDS' | 'AVATAR' | 'FRAME' | 'BADGE' | 'TITLE' | 'VIP_DAYS';
+  amount?: number;
+  itemId?: string;
+  label: Record<Language, string>;
+}
+
+export interface BattlePassLevel {
+  level: number;
+  xpRequired: number;
+  freeReward: BattlePassReward;
+  vipReward: BattlePassReward;
+}
+
+export interface SeasonRecord {
+  id: string;
+  number: number;
+  title: Record<Language, string>;
+  description: Record<Language, string>;
+  startsAt: number;
+  endsAt: number;
+  isActive: boolean;
+  levels: BattlePassLevel[];
+  totalXpPerLevel: number;
+}
+
+export interface UserSeasonProgress {
+  userId: string;
+  seasonId: string;
+  currentLevel: number;
+  currentXp: number;
+  claimedFreeLevels: number[];
+  claimedVipLevels: number[];
+  completedMissions: string[];
+}
+
+export type ClanRole = 'LEADER' | 'OFFICER' | 'MEMBER';
+
+export interface ClanMember {
+  userId: string;
+  username: string;
+  avatar: string;
+  role: ClanRole;
+  joinedAt: number;
+  rating: number;
+  contributionXp: number;
+}
+
+export interface ClanRecord {
+  id: string;
+  name: string;
+  tag: string;
+  description: string;
+  logoUrl: string;
+  leaderId: string;
+  leaderName: string;
+  members: ClanMember[];
+  memberLimit: number;
+  level: number;
+  totalRating: number;
+  announcements: { id: string; author: string; text: string; createdAt: number }[];
+  isSuspended?: boolean;
+  createdAt: number;
+}
+
+export interface ClanInvitation {
+  id: string;
+  clanId: string;
+  clanName: string;
+  clanTag: string;
+  inviterId: string;
+  inviterName: string;
+  inviteeId: string;
+  inviteeName: string;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  createdAt: number;
+}
+
+export interface ReplayEvent {
+  timestamp: number;
+  round: number;
+  phase: GamePhase;
+  type: 'PHASE_CHANGE' | 'CHAT' | 'VOTE' | 'ELIMINATION' | 'VERDICT' | 'VICTORY';
+  actorId?: string;
+  actorName?: string;
+  targetId?: string;
+  targetName?: string;
+  text?: string;
+  data?: Record<string, unknown>;
+}
+
+export interface ReplayRecord {
+  id: string;
+  matchId: string;
+  roomCode: string;
+  mode: GameMode;
+  rounds: number;
+  durationSec: number;
+  winner: string;
+  players: {
+    userId: string;
+    username: string;
+    roleId: RoleId;
+    team: Team;
+    won: boolean;
+  }[];
+  events: ReplayEvent[];
+  createdAt: number;
+}
+
+export interface DirectMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar?: string;
+  recipientId: string;
+  recipientName: string;
+  text: string;
+  read: boolean;
+  createdAt: number;
+}
+
+export interface ConversationSummary {
+  partnerId: string;
+  partnerName: string;
+  partnerAvatar: string;
+  isOnline: boolean;
+  lastMessage: string;
+  lastMessageAt: number;
+  unreadCount: number;
+}
+
+export interface SpectatorSession {
+  roomCode: string;
+  userId: string;
+  username: string;
+  joinedAt: number;
+}
+
+export interface VoiceModerationEvent {
+  id: string;
+  roomCode: string;
+  targetUserId: string;
+  targetUsername: string;
+  action: 'MUTE' | 'UNMUTE' | 'ROOM_MUTE_ALL' | 'RESTRICT';
+  moderatorId: string;
+  createdAt: number;
+}
+
+export type SecurityEventType =
+  | 'IMPOSSIBLE_TRANSITION'
+  | 'RATE_LIMIT_BURST'
+  | 'INVALID_VOTE'
+  | 'ROLE_TAMPERING'
+  | 'WIN_TRADING'
+  | 'COORDINATED_ABUSE';
+
+export interface SecurityEventRecord {
+  id: string;
+  userId: string;
+  username: string;
+  ip: string;
+  type: SecurityEventType;
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  details: string;
+  status: 'PENDING' | 'REVIEWED' | 'DISMISSED' | 'ACTIONED';
+  reviewedBy?: string;
+  actionNote?: string;
+  createdAt: number;
+}
+
+export interface MatchmakingTicket {
+  userId: string;
+  username: string;
+  rating: number;
+  mode: GameMode;
+  lang: Language;
+  queuedAt: number;
+  minRating: number;
+  maxRating: number;
+  socketId?: string;
+}
+
+export interface ReferralRecord {
+  id: string;
+  referrerId: string;
+  referrerUsername: string;
+  referredUserId: string;
+  referredUsername: string;
+  status: 'PENDING' | 'QUALIFIED' | 'REWARDED';
+  registeredAt: number;
+  qualifiedAt?: number;
+  rewardClaimed: boolean;
+}
+
+export interface AiKnowledgeArticle {
+  id: string;
+  category: 'RULES' | 'ROLES' | 'VIP' | 'ECONOMY' | 'CLANS' | 'TOURNAMENTS' | 'TROUBLESHOOTING';
+  title: Record<Language, string>;
+  content: Record<Language, string>;
+  tags: string[];
+}
+
+export interface SupportTicket {
+  id: string;
+  userId: string;
+  username: string;
+  subject: string;
+  description: string;
+  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  responses: {
+    id: string;
+    authorId: string;
+    authorName: string;
+    isStaff: boolean;
+    message: string;
+    createdAt: number;
+  }[];
+  createdAt: number;
+  updatedAt: number;
+}
+
 

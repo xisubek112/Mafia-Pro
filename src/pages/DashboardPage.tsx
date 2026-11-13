@@ -1,22 +1,122 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { Bot, Coins, Gem, Gift, KeyRound, PlusSquare, RefreshCw, Settings, ShoppingBag, Trophy, User, Users } from 'lucide-react';
+import {
+  Bot,
+  Coins,
+  Gem,
+  Gift,
+  KeyRound,
+  PlusSquare,
+  RefreshCw,
+  Settings,
+  ShoppingBag,
+  Trophy,
+  User,
+  Users,
+  Zap,
+} from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { Eye } from 'lucide-react';
 import { GameMode } from '../shared/types';
 
 interface PublicRoomSummary {
   code: string;
   name: string;
   mode: GameMode;
+  phase?: string;
+  allowSpectators?: boolean;
   playerCount: number;
+  spectatorCount?: number;
   maxPlayers: number;
   hostName: string;
 }
 
 export const DashboardPage: React.FC = () => {
-  const { user, t, lang, navigate, joinRoom, createRoom } = useApp();
+  const { user, token, socket, t, lang, navigate, joinRoom, createRoom, showToast } = useApp();
   const [rooms, setRooms] = useState<PublicRoomSummary[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Matchmaking states
+  const [showMatchmaking, setShowMatchmaking] = useState(false);
+  const [mmMode, setMmMode] = useState<GameMode>('CLASSIC');
+  const [mmStatus, setMmStatus] = useState<'IDLE' | 'QUEUED' | 'MATCHED'>('IDLE');
+  const [mmWaitSec, setMmWaitSec] = useState(0);
+
+  const handleStartQueue = async () => {
+    if (!token) return;
+    try {
+      const res = await fetch('/api/matchmaking/join', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ mode: mmMode, lang }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setMmStatus('QUEUED');
+      setMmWaitSec(0);
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Error', 'error');
+    }
+  };
+
+  const handleCancelQueue = async () => {
+    if (token && mmStatus === 'QUEUED') {
+      await fetch('/api/matchmaking/leave', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {});
+    }
+    setMmStatus('IDLE');
+    setMmWaitSec(0);
+    setShowMatchmaking(false);
+  };
+
+  // Listen for real-time matchmaking match notification
+  useEffect(() => {
+    if (!socket || mmStatus !== 'QUEUED') return;
+    const onMatched = (payload: { code: string }) => {
+      if (!payload?.code) return;
+      setMmStatus('MATCHED');
+      setTimeout(async () => {
+        setShowMatchmaking(false);
+        setMmStatus('IDLE');
+        await joinRoom(payload.code);
+      }, 900);
+    };
+    socket.on('matchmaking:matched', onMatched);
+    return () => {
+      socket.off('matchmaking:matched', onMatched);
+    };
+  }, [socket, mmStatus, joinRoom]);
+
+  // Poll matchmaking status while queued
+  useEffect(() => {
+    if (mmStatus !== 'QUEUED' || !token) return;
+    const interval = setInterval(async () => {
+      setMmWaitSec((prev) => prev + 1);
+      try {
+        const res = await fetch('/api/matchmaking/status', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (data.status === 'MATCHED' && data.matchedRoomCode) {
+          setMmStatus('MATCHED');
+          clearInterval(interval);
+          setTimeout(async () => {
+            setShowMatchmaking(false);
+            setMmStatus('IDLE');
+            await joinRoom(data.matchedRoomCode);
+          }, 900);
+        }
+      } catch {
+        // ignore
+      }
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [mmStatus, token]);
 
   const fetchRooms = async () => {
     setLoading(true);
@@ -121,7 +221,34 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid sm:grid-cols-3 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* SMART MATCHMAKING (Tezkor O‘yin) */}
+        <motion.button
+          whileHover={{ y: -3 }}
+          whileTap={{ scale: 0.99 }}
+          transition={{ duration: 0.16 }}
+          onClick={() => {
+            if (!user) {
+              navigate('auth');
+              return;
+            }
+            setShowMatchmaking(true);
+          }}
+          className="glass-panel rounded-2xl p-6 text-left border-red-500/30 hover:border-[#E63946] bg-gradient-to-br from-[#1E0E12] via-[#101426] to-[#0A0D18] transition-all group relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 w-24 h-24 bg-[#E63946]/15 rounded-full blur-xl pointer-events-none" />
+          <Zap className="w-6 h-6 text-[#E63946] mb-3 group-hover:scale-110 transition-transform" />
+          <h3 className="font-display text-lg font-bold text-[#F5F5F7] group-hover:text-[#E63946] transition-colors flex items-center gap-1.5">
+            {lang === 'uz' ? 'Tezkor O‘yin' : 'Быстрая игра'}
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#E63946]/20 text-[#E63946] font-bold uppercase">
+              Elo MM
+            </span>
+          </h3>
+          <p className="mt-1 text-xs text-[#F5F5F7]/65">
+            {lang === 'uz' ? 'Darajangizga mos o‘yinchilarni tezkor qidirish' : 'Умный подбор по вашему рейтингу'}
+          </p>
+        </motion.button>
+
         <motion.button
           whileHover={{ y: -3 }}
           whileTap={{ scale: 0.99 }}
@@ -170,6 +297,111 @@ export const DashboardPage: React.FC = () => {
           </p>
         </motion.button>
       </div>
+
+      {/* SMART MATCHMAKING QUEUE MODAL */}
+      {showMatchmaking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="w-full max-w-md glass-panel-elevated rounded-3xl p-6 sm:p-8 border border-white/15 space-y-6 text-center">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-black uppercase text-[#E7B65B] tracking-wider">
+                {lang === 'uz' ? 'Smart Matchmaking Tizimi' : 'Умный подбор соперников'}
+              </span>
+              <button
+                onClick={handleCancelQueue}
+                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-[#F5F5F7] text-xs font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Radar Animation / Icon */}
+            <div className="relative w-28 h-28 mx-auto flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-2 border-[#E63946]/30 animate-ping pointer-events-none" />
+              <div className="absolute inset-2 rounded-full border border-[#E7B65B]/40 animate-pulse pointer-events-none" />
+              <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#E63946] to-[#E7B65B] flex items-center justify-center shadow-lg shadow-red-900/50">
+                <Zap className="w-9 h-9 text-white animate-bounce" />
+              </div>
+            </div>
+
+            {/* Mode Selector */}
+            {mmStatus === 'IDLE' ? (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-display text-xl font-bold text-[#F5F5F7]">
+                    {lang === 'uz' ? 'Rejimni tanlang' : 'Выберите режим'}
+                  </h3>
+                  <p className="text-xs text-[#F5F5F7]/60 mt-1">
+                    {lang === 'uz'
+                      ? 'Elo reytingingizga mos raqiblar avtomatik qidiriladi'
+                      : 'Поиск игроков с равным рейтингом Elo'}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  {(['CLASSIC', 'ADVANCED', 'CHAOS'] as const).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => setMmMode(m)}
+                      className={`p-3 rounded-xl border text-xs font-bold transition-all ${
+                        mmMode === m
+                          ? 'bg-[#E63946] border-[#E63946] text-white shadow-md'
+                          : 'bg-[#090B12] border-white/10 text-[#F5F5F7]/70 hover:text-white'
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={handleStartQueue}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#E63946] to-[#E7B65B] text-white font-black text-sm shadow-xl shadow-red-900/40 hover:brightness-110 transition-all"
+                >
+                  {lang === 'uz' ? 'Qidiruvni boshlash' : 'Начать поиск'}
+                </button>
+              </div>
+            ) : mmStatus === 'QUEUED' ? (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-display text-xl font-bold text-[#F5F5F7]">
+                    {lang === 'uz' ? 'Raqiblar qidirilmoqda...' : 'Ищем соперников...'}
+                  </h3>
+                  <p className="text-xs font-mono text-[#E7B65B] mt-1">
+                    {mmMode} · {lang.toUpperCase()} · Elo: {user?.rating ?? 1000}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#090B12] border border-white/10 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-mono">
+                    <span className="text-[#F5F5F7]/60">{lang === 'uz' ? 'Kutish vaqti' : 'Время поиска'}:</span>
+                    <span className="font-bold text-white tabular-nums">{mmWaitSec}s</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs font-mono">
+                    <span className="text-[#F5F5F7]/60">{lang === 'uz' ? 'Qidiruv doirasi' : 'Диапазон Elo'}:</span>
+                    <span className="text-emerald-400 font-bold">±{300 + Math.min(mmWaitSec * 15, 600)} MMR</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleCancelQueue}
+                  className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 text-[#F5F5F7] font-bold text-xs transition-colors"
+                >
+                  {lang === 'uz' ? 'Qidiruvni bekor qilish' : 'Отменить поиск'}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <h3 className="font-display text-xl font-bold text-emerald-400">
+                  {lang === 'uz' ? 'O‘yin topildi!' : 'Матч найден!'}
+                </h3>
+                <p className="text-xs text-[#F5F5F7]/70">
+                  {lang === 'uz' ? 'Xonaga ulanmoqda...' : 'Подключение к комнате...'}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Elite Ecosystem Quick Links */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -220,32 +452,49 @@ export const DashboardPage: React.FC = () => {
           </div>
         ) : (
           <div className="divide-y divide-white/10">
-            {rooms.map((r) => (
-              <div key={r.code} className="py-4 flex items-center justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <span className="font-semibold text-[#F5F5F7]">{r.name}</span>
-                    <span className="font-mono text-xs text-[#E7B65B]">{r.code}</span>
+            {rooms.map((r) => {
+              const isLive = r.phase && r.phase !== 'LOBBY';
+              return (
+                <div key={r.code} className="py-4 flex items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <span className="font-semibold text-[#F5F5F7]">{r.name}</span>
+                      <span className="font-mono text-xs text-[#E7B65B]">{r.code}</span>
+                      {isLive && (
+                        <span className="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-[10px] font-bold text-purple-300 flex items-center gap-1">
+                          <Eye className="w-3 h-3" /> LIVE ({r.spectatorCount ?? 0})
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-1 flex items-center gap-2 text-xs text-[#F5F5F7]/60">
+                      <span>{r.mode}</span>
+                      <span>·</span>
+                      <span>{r.hostName}</span>
+                      <span>·</span>
+                      <span className="inline-flex items-center gap-1 tabular-nums">
+                        <Users className="w-3.5 h-3.5" />
+                        {r.playerCount}/{r.maxPlayers}
+                      </span>
+                    </div>
                   </div>
-                  <div className="mt-1 flex items-center gap-2 text-xs text-[#F5F5F7]/60">
-                    <span>{r.mode}</span>
-                    <span>·</span>
-                    <span>{r.hostName}</span>
-                    <span>·</span>
-                    <span className="inline-flex items-center gap-1 tabular-nums">
-                      <Users className="w-3.5 h-3.5" />
-                      {r.playerCount}/{r.maxPlayers}
-                    </span>
-                  </div>
+                  <button
+                    onClick={() => joinRoom(r.code)}
+                    className={`px-4 py-2 rounded-lg text-xs font-semibold text-white transition-colors inline-flex items-center gap-1.5 ${
+                      isLive
+                        ? 'bg-purple-600 hover:bg-purple-500'
+                        : 'bg-[#E63946] hover:bg-[#E63946]/90'
+                    }`}
+                  >
+                    {isLive && <Eye className="w-3.5 h-3.5" />}
+                    {isLive
+                      ? lang === 'uz'
+                        ? 'Tomosha qilish'
+                        : 'Наблюдать'
+                      : t.dashboard.join}
+                  </button>
                 </div>
-                <button
-                  onClick={() => joinRoom(r.code)}
-                  className="px-4 py-2 rounded-lg bg-[#E63946] text-xs font-semibold text-white hover:bg-[#E63946]/90 transition-colors"
-                >
-                  {t.dashboard.join}
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

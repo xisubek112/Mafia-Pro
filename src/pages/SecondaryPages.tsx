@@ -1,5 +1,33 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Award, Ban, BarChart3, CheckCircle, Coins, Crown, Flag, Gem, LogOut, Search, Shield, Trophy, Volume2, VolumeX, XCircle } from 'lucide-react';
+import {
+  AlertTriangle,
+  Award,
+  Ban,
+  BarChart3,
+  CheckCircle,
+  Clock,
+  Coins,
+  Copy,
+  Crown,
+  ExternalLink,
+  FastForward,
+  Flag,
+  Gem,
+  LogOut,
+  Pause,
+  Play,
+  RotateCcw,
+  Search,
+  Share2,
+  Shield,
+  Sparkles,
+  Swords,
+  Trophy,
+  Users,
+  Volume2,
+  VolumeX,
+  XCircle,
+} from 'lucide-react';
 import {
   Area,
   AreaChart,
@@ -20,7 +48,7 @@ import { ROLE_LIST, ROLES } from '../shared/roles';
 import { RARITY_LABELS, ROLE_VISUALS, RoleRarity } from '../shared/roleCards';
 import { ACHIEVEMENTS, TITLES } from '../shared/achievements';
 import { COUNTRIES, getCompetitiveRankName } from '../shared/ecosystem';
-import { GameHistoryRecord, Team, UserProfile } from '../shared/types';
+import { GameHistoryRecord, ReplayRecord, Team, UserProfile } from '../shared/types';
 import { PWAInstallButton } from '../components/Navbar';
 import { RoleCard } from '../components/RoleCard';
 import { AdminControlCenter } from './AdminControlCenter';
@@ -129,9 +157,93 @@ export const ProfilePage: React.FC = () => {
   const [country, setCountry] = useState(user?.country || 'UZ');
   const [activeTitle, setActiveTitle] = useState(user?.activeTitle || '');
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'statistics'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'statistics' | 'referrals'>('overview');
   const [history, setHistory] = useState<GameHistoryRecord[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+
+  // Referral states
+  const [referralInfo, setReferralInfo] = useState<{
+    referralCode: string;
+    referralLink: string;
+    successfulCount: number;
+    claimedMilestones: number[];
+  } | null>(null);
+  const [friendCodeInput, setFriendCodeInput] = useState('');
+  const [applyingCode, setApplyingCode] = useState(false);
+  const [claimingMilestone, setClaimingMilestone] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    fetch('/api/referrals', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.referralCode) setReferralInfo(d);
+      })
+      .catch(() => {});
+  }, [token, user?.successfulReferralsCount, user?.claimedReferralMilestones?.length]);
+
+  const handleApplyReferral = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !friendCodeInput.trim()) return;
+    setApplyingCode(true);
+    try {
+      const res = await fetch('/api/referrals/apply', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ code: friendCodeInput.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      showToast(
+        lang === 'uz'
+          ? `${data.referrerName || ''} kodi qo‘llandi! +150 Gold +100 XP`
+          : `Код ${data.referrerName || ''} активирован! +150 Золота +100 XP`,
+        'success'
+      );
+      setFriendCodeInput('');
+      await refreshUser();
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Error', 'error');
+    } finally {
+      setApplyingCode(false);
+    }
+  };
+
+  const handleClaimMilestone = async (count: number) => {
+    if (!token) return;
+    setClaimingMilestone(count);
+    try {
+      const res = await fetch('/api/referrals/claim', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ level: count }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      showToast(
+        data.reward || (lang === 'uz' ? 'Mukofot hisobingizga qo‘shildi!' : 'Награда зачислена!'),
+        'success'
+      );
+      await refreshUser();
+      if (token) {
+        const refRes = await fetch('/api/referrals', { headers: { Authorization: `Bearer ${token}` } });
+        const refData = await refRes.json();
+        if (refData.referralCode) setReferralInfo(refData);
+      }
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Error', 'error');
+    } finally {
+      setClaimingMilestone(null);
+    }
+  };
 
   useEffect(() => {
     if (!user?.id) return;
@@ -328,7 +440,14 @@ export const ProfilePage: React.FC = () => {
             {t.dashboard.statsLevel} {user.level} · {rankName} ({user.rating} MMR) · {user.country}
           </p>
           <div className="flex flex-wrap items-center gap-3 mt-1">
-            <h1 className="font-display text-3xl font-bold text-[#F5F5F7]">{user.username}</h1>
+            <h1 className="font-display text-3xl font-bold text-[#F5F5F7] flex items-center gap-2">
+              {user.clanTag && (
+                <span className="px-2 py-0.5 rounded-lg bg-gradient-to-r from-[#E63946]/30 to-[#E7B65B]/30 border border-[#E7B65B]/50 font-mono text-xs font-black text-[#E7B65B]">
+                  [{user.clanTag}]
+                </span>
+              )}
+              {user.username}
+            </h1>
             {user.subscription.status === 'ACTIVE' && (
               <span className="inline-flex items-center gap-1 text-xs font-bold text-[#E7B65B]">
                 <Crown className="w-4 h-4" /> VIP ELITE
@@ -402,6 +521,18 @@ export const ProfilePage: React.FC = () => {
         >
           <BarChart3 className="w-3.5 h-3.5" />
           {lang === 'uz' ? 'Statistika' : 'Статистика'}
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('referrals')}
+          className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
+            activeTab === 'referrals'
+              ? 'bg-[#E7B65B] text-[#090B12] shadow-sm font-bold'
+              : 'text-[#F5F5F7]/70 hover:text-[#F5F5F7]'
+          }`}
+        >
+          <Share2 className="w-3.5 h-3.5" />
+          {lang === 'uz' ? 'Referral Dasturi' : 'Рефералы'}
         </button>
       </div>
 
@@ -628,7 +759,7 @@ export const ProfilePage: React.FC = () => {
             </div>
           </div>
         </div>
-      ) : (
+      ) : activeTab === 'overview' ? (
         <>
           {/* XP Bar & Edit */}
           <div className="grid md:grid-cols-2 gap-6">
@@ -759,6 +890,188 @@ export const ProfilePage: React.FC = () => {
         </div>
       </div>
         </>
+      ) : (
+        <div className="space-y-6">
+          {/* Referral Hero Banner */}
+          <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 border border-[#E7B65B]/30 bg-gradient-to-r from-[#170E10] via-[#101426] to-[#0D1B2A]">
+            <div className="flex flex-wrap items-center justify-between gap-6">
+              <div className="space-y-2">
+                <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-[#E7B65B]/20 text-[#E7B65B] border border-[#E7B65B]/40 inline-flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  {lang === 'uz' ? 'MAFIA PRO Hamkorlik Dasturi' : 'Партнёрская программа'}
+                </span>
+                <h2 className="text-3xl font-extrabold text-[#F5F5F7]">
+                  {lang === 'uz' ? 'Do‘stlaringizni taklif qiling' : 'Приглашайте друзей'}
+                </h2>
+                <p className="text-xs sm:text-sm text-[#F5F5F7]/70 max-w-xl">
+                  {lang === 'uz'
+                    ? 'Har bir taklif qilingan do‘stingiz o‘yinni boshlaganda bonus Gold va Olmoslar oling. Do‘stingiz ham boshlang‘ich 250 Gold bonusiga ega bo‘ladi!'
+                    : 'Получайте бонусное Золото и Алмазы за каждого приглашённого друга. Друг также получит стартовые 250 Золота!'}
+                </p>
+              </div>
+
+              {/* Referral Stats Counter */}
+              <div className="bg-[#090B12]/80 backdrop-blur-md rounded-2xl p-5 border border-white/10 min-w-[240px] text-center space-y-1">
+                <p className="text-xs text-[#F5F5F7]/60 font-semibold">
+                  {lang === 'uz' ? 'Taklif qilingan do‘stlar' : 'Приглашено друзей'}
+                </p>
+                <p className="font-mono text-3xl font-black text-[#E7B65B]">
+                  {user.successfulReferralsCount || 0}
+                </p>
+                <p className="text-[11px] text-emerald-400 font-medium">
+                  {lang === 'uz' ? 'Barcha bosqichlar faol' : 'Все этапы активны'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Referral Code & Share Link Cards */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="glass-panel rounded-2xl p-6 space-y-4">
+              <h3 className="font-display text-base font-bold text-[#F5F5F7] flex items-center gap-2">
+                <Share2 className="w-4 h-4 text-[#E7B65B]" />
+                {lang === 'uz' ? 'Sizning maxsus kodingiz' : 'Ваш реферальный код'}
+              </h3>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 p-3.5 rounded-xl bg-[#090B12] border border-white/10 font-mono text-base font-bold text-[#E7B65B] tracking-wider text-center select-all">
+                  {referralInfo?.referralCode || user.referralCode || '...'}
+                </div>
+                <button
+                  onClick={() => {
+                    const code = referralInfo?.referralCode || user.referralCode;
+                    if (code) {
+                      navigator.clipboard.writeText(code);
+                      showToast(lang === 'uz' ? 'Kod nusxalandi!' : 'Код скопирован!', 'success');
+                    }
+                  }}
+                  className="p-3.5 rounded-xl bg-[#E7B65B] text-[#090B12] hover:bg-[#E7B65B]/90 transition-colors font-bold text-xs flex items-center gap-1.5"
+                >
+                  <Copy className="w-4 h-4" />
+                  {lang === 'uz' ? 'Nusxalash' : 'Копировать'}
+                </button>
+              </div>
+              <p className="text-[11px] text-[#F5F5F7]/50">
+                {lang === 'uz'
+                  ? 'Do‘stingiz ushbu kodni o‘z profilida kiritishi kifoya.'
+                  : 'Другу достаточно указать этот код в своём профиле.'}
+              </p>
+            </div>
+
+            <div className="glass-panel rounded-2xl p-6 space-y-4">
+              <h3 className="font-display text-base font-bold text-[#F5F5F7] flex items-center gap-2">
+                <ExternalLink className="w-4 h-4 text-[#38BDF8]" />
+                {lang === 'uz' ? 'Do‘st kodi bilan bonus olish' : 'Ввести код друга'}
+              </h3>
+              {user.referredBy ? (
+                <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs font-semibold text-emerald-300">
+                  {lang === 'uz'
+                    ? 'Siz allaqachon do‘st kodi bilan 250 Gold bonusini olgansiz!'
+                    : 'Вы уже получили стартовый бонус 250 Золота по коду друга!'}
+                </div>
+              ) : (
+                <form onSubmit={handleApplyReferral} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={friendCodeInput}
+                    onChange={(e) => setFriendCodeInput(e.target.value.toUpperCase())}
+                    placeholder={lang === 'uz' ? 'Masalan: MAFIA-77' : 'Например: MAFIA-77'}
+                    className="flex-1 px-3.5 py-3 rounded-xl bg-[#090B12] border border-white/10 text-xs text-[#F5F5F7] uppercase font-mono tracking-wider focus:outline-none focus:border-[#E63946]"
+                  />
+                  <button
+                    type="submit"
+                    disabled={applyingCode || !friendCodeInput.trim()}
+                    className="px-4 py-3 rounded-xl bg-[#E63946] hover:bg-[#E63946]/90 disabled:opacity-40 text-xs font-bold text-white transition-colors"
+                  >
+                    {applyingCode ? '...' : lang === 'uz' ? 'Qo‘llash (+250 G)' : 'Применить (+250)'}
+                  </button>
+                </form>
+              )}
+              <p className="text-[11px] text-[#F5F5F7]/50">
+                {lang === 'uz'
+                  ? 'Har bir hisob faqat bir marta boshqa o‘yinchi kodini faollashtirishi mumkin.'
+                  : 'Каждый аккаунт может активировать чужой код только один раз.'}
+              </p>
+            </div>
+          </div>
+
+          {/* Milestone Rewards Grid */}
+          <div className="glass-panel rounded-2xl p-6 space-y-4">
+            <h3 className="font-display text-lg font-bold text-[#F5F5F7] flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-[#E7B65B]" />
+              {lang === 'uz' ? 'Do‘stlar soni bo‘yicha mukofotlar' : 'Награды за число друзей'}
+            </h3>
+
+            <div className="grid md:grid-cols-3 gap-4">
+              {[
+                { count: 1, label: { uz: '1 ta Do‘st', ru: '1 Друг' }, gold: 250, diamonds: 2 },
+                { count: 3, label: { uz: '3 ta Do‘st', ru: '3 Друга' }, gold: 600, diamonds: 10, frameName: { uz: 'Qonli Chegara Ramkasi', ru: 'Рамка Алая граница' } },
+                { count: 5, label: { uz: '5 ta Do‘st', ru: '5 Друзей' }, gold: 1500, diamonds: 25, vipDays: 7 },
+              ].map((m) => {
+                const totalRef = referralInfo?.successfulCount ?? user.successfulReferralsCount ?? 0;
+                const isReached = totalRef >= m.count;
+                const claimedList = referralInfo?.claimedMilestones || user.claimedReferralMilestones || [];
+                const claimed = claimedList.includes(m.count);
+
+                return (
+                  <div
+                    key={m.count}
+                    className={`p-5 rounded-2xl border flex flex-col justify-between transition-all ${
+                      claimed
+                        ? 'bg-emerald-500/10 border-emerald-500/30'
+                        : isReached
+                          ? 'bg-[#E7B65B]/10 border-[#E7B65B]/40'
+                          : 'bg-[#090B12] border-white/5 opacity-75'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-display text-sm font-bold text-[#F5F5F7]">
+                          {m.label[lang]}
+                        </span>
+                        <span className="font-mono text-xs text-[#F5F5F7]/60">
+                          {Math.min(totalRef, m.count)} / {m.count}
+                        </span>
+                      </div>
+                      <div className="space-y-1 mb-4 text-xs font-mono">
+                        <p className="text-[#E7B65B]">+{m.gold} Gold</p>
+                        {m.vipDays && <p className="text-amber-300">+{m.vipDays} {lang === 'uz' ? 'kun VIP Obuna' : 'дн. VIP'}</p>}
+                        {m.diamonds && <p className="text-[#38BDF8]">+{m.diamonds} Diamonds</p>}
+                        {m.frameName && (
+                          <p className="text-[#A855F7] font-sans font-semibold">
+                            {m.frameName[lang]}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {claimed ? (
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+                        <CheckCircle className="w-4 h-4" />
+                        {lang === 'uz' ? 'Mukofot olingan' : 'Получено'}
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleClaimMilestone(m.count)}
+                        disabled={!isReached || claimingMilestone === m.count}
+                        className="w-full py-2.5 rounded-xl bg-[#E7B65B] hover:bg-[#E7B65B]/90 disabled:opacity-30 text-xs font-black text-[#090B12] transition-colors"
+                      >
+                        {claimingMilestone === m.count
+                          ? '...'
+                          : isReached
+                            ? lang === 'uz'
+                              ? 'Mukofotni olish'
+                              : 'Забрать награду'
+                            : lang === 'uz'
+                              ? 'Qulfda'
+                              : 'Заблокировано'}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -769,31 +1082,48 @@ export const LeaderboardPage: React.FC = () => {
   const [list, setList] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<'global' | 'weekly' | 'monthly'>('global');
+  const [modeFilter, setModeFilter] = useState<'ALL' | 'CLASSIC' | 'ADVANCED' | 'CHAOS'>('ALL');
   const [friendsOnly, setFriendsOnly] = useState(false);
   const [country, setCountry] = useState('ALL');
   const [search, setSearch] = useState('');
 
   useEffect(() => {
     setLoading(true);
-    const params = new URLSearchParams({ period, country });
-    if (friendsOnly) params.set('friends', 'true');
-    if (search.trim()) params.set('search', search.trim());
+    if (modeFilter !== 'ALL') {
+      fetch(`/api/rankings/mode?mode=${modeFilter}&period=${period.toUpperCase()}`)
+        .then((r) => r.json())
+        .then((d) => setList(d.leaderboard || []))
+        .catch(() => setList([]))
+        .finally(() => setLoading(false));
+    } else {
+      const params = new URLSearchParams({ period, country });
+      if (friendsOnly) params.set('friends', 'true');
+      if (search.trim()) params.set('search', search.trim());
 
-    fetch(`/api/leaderboard?${params.toString()}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    })
-      .then((r) => r.json())
-      .then((d) => setList(d.leaderboard || []))
-      .finally(() => setLoading(false));
-  }, [period, country, friendsOnly, search, token]);
+      fetch(`/api/leaderboard?${params.toString()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      })
+        .then((r) => r.json())
+        .then((d) => setList(d.leaderboard || []))
+        .catch(() => setList([]))
+        .finally(() => setLoading(false));
+    }
+  }, [period, modeFilter, country, friendsOnly, search, token]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-24 space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-        <h1 className="font-display text-3xl font-bold text-[#F5F5F7] flex items-center gap-3">
-          <Trophy className="w-7 h-7 text-[#E7B65B]" />
-          {t.leaderboard.title}
-        </h1>
+        <div>
+          <h1 className="font-display text-3xl font-bold text-[#F5F5F7] flex items-center gap-3">
+            <Trophy className="w-7 h-7 text-[#E7B65B]" />
+            {t.leaderboard.title}
+          </h1>
+          <p className="text-xs text-[#F5F5F7]/60 mt-1">
+            {lang === 'uz'
+              ? 'Elo reyting tizimi va rejimlar bo‘yicha peshqadamlar'
+              : 'Таблица лидеров по рейтингу Elo и игровым режимам'}
+          </p>
+        </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative">
@@ -810,7 +1140,8 @@ export const LeaderboardPage: React.FC = () => {
           <select
             value={country}
             onChange={(e) => setCountry(e.target.value)}
-            className="px-3 py-2 rounded-xl bg-[#111522] border border-white/10 text-xs text-[#F5F5F7]"
+            disabled={modeFilter !== 'ALL'}
+            className="px-3 py-2 rounded-xl bg-[#111522] border border-white/10 text-xs text-[#F5F5F7] disabled:opacity-40"
           >
             <option value="ALL">{lang === 'uz' ? 'Barcha davlatlar' : 'Все страны'}</option>
             {COUNTRIES.map((c) => (
@@ -822,6 +1153,31 @@ export const LeaderboardPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Mode Filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        {(
+          [
+            { id: 'ALL', uz: 'Umumiy MMR', ru: 'Общий MMR' },
+            { id: 'CLASSIC', uz: 'Klassik Rejim', ru: 'Классический' },
+            { id: 'ADVANCED', uz: 'Kengaytirilgan', ru: 'Продвинутый' },
+            { id: 'CHAOS', uz: 'Xaos Rejim', ru: 'Хаос' },
+          ] as const
+        ).map((m) => (
+          <button
+            key={m.id}
+            onClick={() => setModeFilter(m.id)}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-colors ${
+              modeFilter === m.id
+                ? 'bg-[#E7B65B] border-[#E7B65B] text-[#090B12]'
+                : 'bg-[#111522] border-white/10 text-[#F5F5F7]/70 hover:text-white'
+            }`}
+          >
+            {m[lang]}
+          </button>
+        ))}
+      </div>
+
+      {/* Period & Friends Filter */}
       <div className="flex flex-wrap items-center gap-2">
         {(['global', 'weekly', 'monthly'] as const).map((p) => (
           <button
@@ -847,7 +1203,7 @@ export const LeaderboardPage: React.FC = () => {
                   : 'Месяц'}
           </button>
         ))}
-        {user && (
+        {user && modeFilter === 'ALL' && (
           <button
             onClick={() => setFriendsOnly(!friendsOnly)}
             className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-colors ${
@@ -871,7 +1227,9 @@ export const LeaderboardPage: React.FC = () => {
                 <tr>
                   <th className="py-3.5 px-5">{t.leaderboard.rank}</th>
                   <th className="py-3.5 px-5">{t.leaderboard.player}</th>
-                  <th className="py-3.5 px-5">MMR</th>
+                  <th className="py-3.5 px-5">
+                    {modeFilter === 'ALL' ? 'MMR' : `${modeFilter} ELO`}
+                  </th>
                   <th className="py-3.5 px-5">{t.leaderboard.level}</th>
                   <th className="py-3.5 px-5">{t.leaderboard.wins}</th>
                   <th className="py-3.5 px-5">{t.leaderboard.winRate}</th>
@@ -881,16 +1239,27 @@ export const LeaderboardPage: React.FC = () => {
               <tbody className="divide-y divide-white/10">
                 {list.map((u, i) => {
                   const wr = u.totalGames > 0 ? Math.round((u.wins / u.totalGames) * 100) : 0;
+                  const displayRating =
+                    modeFilter !== 'ALL' && u.modeRatings?.[modeFilter]
+                      ? u.modeRatings[modeFilter]
+                      : u.rating;
                   return (
                     <tr key={u.id} className="hover:bg-white/5">
                       <td className="py-3.5 px-5 font-mono font-bold text-[#E7B65B] tabular-nums">
                         #{i + 1}
                       </td>
-                      <td className="py-3.5 px-5 font-semibold text-[#F5F5F7]">
-                        {u.username}{' '}
+                      <td className="py-3.5 px-5 font-semibold text-[#F5F5F7] flex items-center gap-1.5">
+                        {u.clanTag && (
+                          <span className="text-[10px] font-mono font-bold text-[#E7B65B]">
+                            [{u.clanTag}]
+                          </span>
+                        )}
+                        <span>{u.username}</span>
                         <span className="text-[11px] text-[#F5F5F7]/45 ml-1">{u.country}</span>
                       </td>
-                      <td className="py-3.5 px-5 font-mono tabular-nums text-[#E7B65B]">{u.rating}</td>
+                      <td className="py-3.5 px-5 font-mono tabular-nums text-[#E7B65B]">
+                        {displayRating}
+                      </td>
                       <td className="py-3.5 px-5 font-mono tabular-nums">{u.level}</td>
                       <td className="py-3.5 px-5 font-mono tabular-nums text-emerald-400">{u.wins}</td>
                       <td className="py-3.5 px-5 font-mono tabular-nums">{wr}%</td>
@@ -908,9 +1277,16 @@ export const LeaderboardPage: React.FC = () => {
 };
 
 export const HistoryPage: React.FC = () => {
-  const { t, lang } = useApp();
+  const { t, lang, showToast } = useApp();
   const [items, setItems] = useState<GameHistoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Replay modal state
+  const [selectedReplay, setSelectedReplay] = useState<ReplayRecord | null>(null);
+  const [loadingReplay, setLoadingReplay] = useState(false);
+  const [currentEventIdx, setCurrentEventIdx] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playSpeed, setPlaySpeed] = useState<1 | 2 | 4>(1);
 
   useEffect(() => {
     fetch('/api/history')
@@ -919,9 +1295,58 @@ export const HistoryPage: React.FC = () => {
       .finally(() => setLoading(false));
   }, []);
 
+  const openReplay = async (roomCode: string) => {
+    setLoadingReplay(true);
+    setIsPlaying(false);
+    setCurrentEventIdx(0);
+    try {
+      const res = await fetch(`/api/replays/${roomCode}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setSelectedReplay(data.replay);
+    } catch (err: unknown) {
+      showToast(
+        err instanceof Error
+          ? err.message
+          : lang === 'uz'
+            ? 'Replay topilmadi'
+            : 'Повтор не найден',
+        'error'
+      );
+    } finally {
+      setLoadingReplay(false);
+    }
+  };
+
+  // Replay auto-play ticker
+  useEffect(() => {
+    if (!isPlaying || !selectedReplay) return;
+    const intervalMs = 2000 / playSpeed;
+    const interval = setInterval(() => {
+      setCurrentEventIdx((prev) => {
+        if (prev >= selectedReplay.events.length - 1) {
+          setIsPlaying(false);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, intervalMs);
+    return () => clearInterval(interval);
+  }, [isPlaying, playSpeed, selectedReplay]);
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 pb-24 space-y-6">
-      <h1 className="font-display text-3xl font-bold text-[#F5F5F7]">{t.history.title}</h1>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-3xl font-bold text-[#F5F5F7]">{t.history.title}</h1>
+          <p className="text-xs text-[#F5F5F7]/60 mt-1">
+            {lang === 'uz'
+              ? 'Tugallangan o‘yinlar va takror ko‘rish (Replay) arxivi'
+              : 'Архив завершённых матчей и интерактивный просмотр повторов (Replay)'}
+          </p>
+        </div>
+      </div>
+
       {loading ? (
         <div className="glass-panel rounded-2xl p-10 text-center text-sm text-[#F5F5F7]/50">...</div>
       ) : items.length === 0 ? (
@@ -931,27 +1356,191 @@ export const HistoryPage: React.FC = () => {
       ) : (
         <div className="space-y-4">
           {items.map((h) => (
-            <div key={h.id} className="glass-panel rounded-2xl p-5">
+            <div key={h.id} className="glass-panel rounded-2xl p-5 hover:border-white/20 transition-all">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <span className="font-mono text-xs text-[#E7B65B]">{h.roomCode}</span>
-                  <span className="mx-2 text-[#F5F5F7]/30">·</span>
+                <div className="flex items-center gap-3">
+                  <span className="font-mono text-xs px-2.5 py-1 rounded-lg bg-white/10 font-bold text-[#E7B65B]">
+                    #{h.roomCode}
+                  </span>
                   <span className="text-sm font-bold text-[#F5F5F7]">{h.mode}</span>
+                  <span className="text-xs text-[#F5F5F7]/60">
+                    {new Date(h.endedAt).toLocaleTimeString()}
+                  </span>
                 </div>
-                <div className="text-xs text-[#F5F5F7]/65 tabular-nums">
-                  {t.history.winner}: <strong className="text-emerald-400">{h.winner}</strong> · {h.rounds}{' '}
-                  {t.history.rounds} · {h.durationSec}s
+                <div className="flex items-center gap-3">
+                  <div className="text-xs text-[#F5F5F7]/65 tabular-nums">
+                    {t.history.winner}: <strong className="text-emerald-400">{h.winner}</strong> · {h.rounds}{' '}
+                    {t.history.rounds} · {h.durationSec}s
+                  </div>
+                  <button
+                    onClick={() => openReplay(h.roomCode)}
+                    disabled={loadingReplay}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#E63946]/20 border border-[#E63946]/40 hover:bg-[#E63946] text-[#F5F5F7] text-xs font-bold transition-all"
+                  >
+                    <Play className="w-3.5 h-3.5 text-[#E63946] group-hover:text-white" />
+                    {lang === 'uz' ? 'Replay' : 'Повтор'}
+                  </button>
                 </div>
               </div>
               <div className="mt-3 pt-3 border-t border-white/10 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#F5F5F7]/70">
                 {h.players.map((p, idx) => (
-                  <span key={idx} className={p.won ? 'text-emerald-400' : ''}>
-                    {p.username} ({ROLES[p.roleId]?.name[lang]})
+                  <span key={idx} className={p.won ? 'text-emerald-400 font-semibold' : ''}>
+                    {p.username} ({ROLES[p.roleId]?.name[lang] || p.roleId})
                   </span>
                 ))}
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* MATCH REPLAY MODAL */}
+      {selectedReplay && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="w-full max-w-3xl glass-panel-elevated rounded-3xl p-6 sm:p-8 border border-white/15 max-h-[90vh] flex flex-col space-y-5">
+            {/* Replay Header */}
+            <div className="flex items-start justify-between">
+              <div>
+                <span className="text-[11px] font-black uppercase text-[#E7B65B] tracking-wider">
+                  {lang === 'uz' ? 'Rasmiy O‘yin Takrori' : 'Официальный Replay матча'}
+                </span>
+                <h2 className="text-2xl font-black text-[#F5F5F7] flex items-center gap-2 mt-0.5">
+                  <Play className="w-5 h-5 text-[#E63946]" />
+                  #{selectedReplay.roomCode} · {selectedReplay.mode}
+                </h2>
+                <p className="text-xs text-[#F5F5F7]/60">
+                  {lang === 'uz' ? 'G‘olib' : 'Победитель'}:{' '}
+                  <span className="font-bold text-emerald-400">{selectedReplay.winner}</span> · {selectedReplay.rounds} {lang === 'uz' ? 'raund' : 'раундов'}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedReplay(null);
+                  setIsPlaying(false);
+                }}
+                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-[#F5F5F7] text-xs font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Revealed Player Roster */}
+            <div className="p-3.5 rounded-2xl bg-[#090B12] border border-white/10">
+              <p className="text-[11px] font-bold text-[#F5F5F7]/60 mb-2">
+                {lang === 'uz' ? 'O‘yinchilar va ularning rollari (Sir ochilgan):' : 'Игроки и их роли:'}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {selectedReplay.players.map((p) => {
+                  const roleDef = ROLES[p.roleId as keyof typeof ROLES];
+                  const isMafia = roleDef?.team === 'MAFIA';
+                  return (
+                    <span
+                      key={p.userId}
+                      className={`px-2.5 py-1 rounded-xl text-xs font-semibold border ${
+                        p.won
+                          ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
+                          : isMafia
+                            ? 'bg-red-500/15 border-red-500/40 text-red-300'
+                            : 'bg-white/5 border-white/10 text-white/80'
+                      }`}
+                    >
+                      {p.username} <span className="opacity-70 font-mono text-[10px]">({roleDef ? roleDef.name[lang] : p.roleId})</span>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Event Timeline Viewer */}
+            <div className="flex-1 overflow-y-auto min-h-[160px] p-4 rounded-2xl bg-[#090B12]/80 border border-white/5 space-y-3">
+              {selectedReplay.events.length === 0 ? (
+                <p className="text-center text-xs text-[#F5F5F7]/50 py-8">
+                  {lang === 'uz' ? 'Hodisalar topilmadi' : 'События отсутствуют'}
+                </p>
+              ) : (
+                (() => {
+                  const currentEvent = selectedReplay.events[currentEventIdx];
+                  if (!currentEvent) return null;
+                  return (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-xs font-bold text-[#F5F5F7]/70">
+                        <span className="px-2.5 py-1 rounded-lg bg-[#E63946]/20 text-[#E63946] font-mono">
+                          {currentEvent.phase} · {lang === 'uz' ? 'Raund' : 'Раунд'} {currentEvent.round}
+                        </span>
+                        <span className="font-mono text-white/50">
+                          {currentEventIdx + 1} / {selectedReplay.events.length}
+                        </span>
+                      </div>
+                      <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
+                        <p className="text-sm font-bold text-[#F5F5F7]">{currentEvent.text || currentEvent.type}</p>
+                        {currentEvent.actorName && (
+                          <p className="text-xs text-[#F5F5F7]/70">
+                            {lang === 'uz' ? 'Ijrochi' : 'Игрок'}: <strong>{currentEvent.actorName}</strong>
+                          </p>
+                        )}
+                        {currentEvent.targetName && (
+                          <p className="text-xs text-[#E7B65B]">
+                            {lang === 'uz' ? 'Nishon' : 'Цель'}: <strong>{currentEvent.targetName}</strong>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()
+              )}
+            </div>
+
+            {/* Playback Controls */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-white/10">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsPlaying(!isPlaying)}
+                  className="p-3 rounded-xl bg-[#E63946] text-white hover:bg-[#E63946]/90 transition-all font-bold text-xs flex items-center gap-1.5"
+                >
+                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                  {isPlaying ? (lang === 'uz' ? 'Pauza' : 'Пауза') : (lang === 'uz' ? 'Ijro' : 'Пуск')}
+                </button>
+                <button
+                  onClick={() => {
+                    setIsPlaying(false);
+                    setCurrentEventIdx(0);
+                  }}
+                  className="p-3 rounded-xl bg-white/10 hover:bg-white/20 text-[#F5F5F7] transition-all"
+                  title="Boshiga qaytish"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+                <div className="inline-flex items-center rounded-xl bg-[#090B12] p-1 border border-white/10">
+                  {([1, 2, 4] as const).map((spd) => (
+                    <button
+                      key={spd}
+                      onClick={() => setPlaySpeed(spd)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-colors ${
+                        playSpeed === spd ? 'bg-[#E7B65B] text-[#090B12]' : 'text-white/60'
+                      }`}
+                    >
+                      {spd}x
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Scrubber Range */}
+              <div className="flex-1 min-w-[200px] flex items-center gap-3">
+                <input
+                  type="range"
+                  min={0}
+                  max={Math.max(0, selectedReplay.events.length - 1)}
+                  value={currentEventIdx}
+                  onChange={(e) => {
+                    setIsPlaying(false);
+                    setCurrentEventIdx(Number(e.target.value));
+                  }}
+                  className="w-full accent-[#E63946]"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

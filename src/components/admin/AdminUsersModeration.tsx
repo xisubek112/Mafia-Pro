@@ -230,7 +230,117 @@ export const AdminUsersModeration: React.FC<{
     );
   }
 
-  // MODERATION CENTER (Module 09)
+  // MODERATION CENTER (Module 09 + Anti-Cheat + Support + Elo Reset)
+  const [modSubTab, setModSubTab] = useState<'reports' | 'antiCheat' | 'tickets' | 'eloReset'>('reports');
+  const [securityEvents, setSecurityEvents] = useState<any[]>([]);
+  const [supportTickets, setSupportTickets] = useState<any[]>([]);
+  const [loadingSec, setLoadingSec] = useState(false);
+  const [ticketReplyText, setTicketReplyText] = useState<Record<string, string>>({});
+  const [resetConfirmText, setResetConfirmText] = useState('');
+  const [resettingElo, setResettingElo] = useState(false);
+
+  const loadSecurityEvents = async () => {
+    setLoadingSec(true);
+    try {
+      const res = await fetch('/api/admin/anti-cheat/events', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const d = await res.json();
+      if (d.events) setSecurityEvents(d.events);
+    } catch {
+      // ignore
+    } finally {
+      setLoadingSec(false);
+    }
+  };
+
+  const loadSupportTickets = async () => {
+    try {
+      const res = await fetch('/api/admin/support/tickets', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const d = await res.json();
+      if (d.tickets) setSupportTickets(d.tickets);
+    } catch {
+      // ignore
+    }
+  };
+
+  React.useEffect(() => {
+    if (mode === 'moderation') {
+      if (modSubTab === 'antiCheat') loadSecurityEvents();
+      if (modSubTab === 'tickets') loadSupportTickets();
+    }
+  }, [mode, modSubTab, token]);
+
+  const handleReviewSecEvent = async (id: string, status: 'ACTIONED' | 'DISMISSED' | 'REVIEWED') => {
+    try {
+      const res = await fetch(`/api/admin/anti-cheat/review/${id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status, note: 'Reviewed by admin' }),
+      });
+      if (res.ok) {
+        showToast(lang === 'uz' ? 'Hodisa ko‘rib chiqildi' : 'Событие рассмотрено', 'success');
+        loadSecurityEvents();
+      }
+    } catch {
+      showToast('Error', 'error');
+    }
+  };
+
+  const handleReplyTicket = async (ticketId: string) => {
+    const text = ticketReplyText[ticketId]?.trim();
+    if (!text) return;
+    try {
+      const res = await fetch(`/api/admin/support/tickets/${ticketId}/reply`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ message: text }),
+      });
+      if (res.ok) {
+        showToast(lang === 'uz' ? 'Javob yuborildi' : 'Ответ отправлен', 'success');
+        setTicketReplyText((prev) => ({ ...prev, [ticketId]: '' }));
+        loadSupportTickets();
+      }
+    } catch {
+      showToast('Error', 'error');
+    }
+  };
+
+  const handleResetElo = async () => {
+    if (resetConfirmText !== 'RESET-CONFIRM') {
+      showToast(lang === 'uz' ? 'Tasdiqlash kodi noto‘g‘ri' : 'Неверный код подтверждения', 'error');
+      return;
+    }
+    setResettingElo(true);
+    try {
+      const res = await fetch('/api/admin/rankings/reset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ confirm: 'RESET-CONFIRM', targetRating: 1000 }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error);
+      showToast(lang === 'uz' ? 'Barcha Elo reytinglari muvaffaqiyatli tiklandi!' : 'Рейтинги сброшены!', 'success');
+      setResetConfirmText('');
+      await onReload();
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Error', 'error');
+    } finally {
+      setResettingElo(false);
+    }
+  };
+
   const visibleReports = data.reports.filter((r) => {
     if (reportFilter === 'OPEN') return r.status === 'OPEN';
     if (reportFilter === 'RESOLVED') return r.status !== 'OPEN';
@@ -242,28 +352,70 @@ export const AdminUsersModeration: React.FC<{
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-display text-2xl font-bold text-[#F5F5F7] flex items-center gap-2">
           <Shield className="w-6 h-6 text-[#E63946]" />
-          {lang === 'uz' ? 'Moderatsiya Markazi' : 'Центр модерации'}
+          {lang === 'uz' ? 'Moderatsiya & Xavfsizlik Markazi' : 'Центр модерации и безопасности'}
         </h2>
-        <div className="inline-flex p-1 rounded-xl bg-[#090B12] border border-white/10">
-          {(['OPEN', 'ALL', 'RESOLVED'] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setReportFilter(f)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                reportFilter === f ? 'bg-[#E63946] text-white' : 'text-[#F5F5F7]/65'
-              }`}
-            >
-              {f}
-            </button>
-          ))}
+
+        {/* Sub-tab switcher */}
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#090B12] border border-white/10">
+          <button
+            onClick={() => setModSubTab('reports')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+              modSubTab === 'reports' ? 'bg-[#E63946] text-white' : 'text-[#F5F5F7]/65 hover:text-white'
+            }`}
+          >
+            {lang === 'uz' ? 'Shikoyatlar' : 'Жалобы'} ({data.reports.filter((r) => r.status === 'OPEN').length})
+          </button>
+          <button
+            onClick={() => setModSubTab('antiCheat')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+              modSubTab === 'antiCheat' ? 'bg-[#E63946] text-white' : 'text-[#F5F5F7]/65 hover:text-white'
+            }`}
+          >
+            Anti-Cheat
+          </button>
+          <button
+            onClick={() => setModSubTab('tickets')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+              modSubTab === 'tickets' ? 'bg-[#E63946] text-white' : 'text-[#F5F5F7]/65 hover:text-white'
+            }`}
+          >
+            {lang === 'uz' ? 'Biletlar' : 'Тикеты'}
+          </button>
+          <button
+            onClick={() => setModSubTab('eloReset')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+              modSubTab === 'eloReset' ? 'bg-[#E7B65B] text-[#090B12] font-bold' : 'text-[#F5F5F7]/65 hover:text-white'
+            }`}
+          >
+            {lang === 'uz' ? 'Reyting Reset' : 'Сброс рейтинга'}
+          </button>
         </div>
       </div>
 
-      {visibleReports.length === 0 ? (
-        <div className="glass-panel rounded-2xl p-10 text-center text-sm text-[#F5F5F7]/55">
-          {lang === 'uz' ? 'Shikoyatlar mavjud emas' : 'Жалоб нет'}
-        </div>
-      ) : (
+      {/* SUB-TAB: REPORTS */}
+      {modSubTab === 'reports' && (
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <div className="inline-flex p-1 rounded-xl bg-[#090B12] border border-white/10">
+              {(['OPEN', 'ALL', 'RESOLVED'] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setReportFilter(f)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                    reportFilter === f ? 'bg-[#E63946] text-white' : 'text-[#F5F5F7]/65'
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {visibleReports.length === 0 ? (
+            <div className="glass-panel rounded-2xl p-10 text-center text-sm text-[#F5F5F7]/55">
+              {lang === 'uz' ? 'Shikoyatlar mavjud emas' : 'Жалоб нет'}
+            </div>
+          ) : (
         <div className="space-y-3">
           {visibleReports.map((rep) => {
             const targetUser = data.users.find((u) => u.id === rep.targetUserId);
@@ -347,6 +499,171 @@ export const AdminUsersModeration: React.FC<{
               </div>
             );
           })}
+        </div>
+      )}
+      </div>
+      )}
+
+      {/* SUB-TAB: ANTI-CHEAT */}
+      {modSubTab === 'antiCheat' && (
+        <div className="space-y-4">
+          <p className="text-xs text-[#F5F5F7]/60">
+            {lang === 'uz'
+              ? 'Multiplayer yaxlitligi, tezkor ovoz berish va noqonuniy harakatlar monitoringi'
+              : 'Мониторинг целостности мультиплеера, таймингов и подозрительных действий'}
+          </p>
+          {loadingSec ? (
+            <div className="p-8 text-center text-sm text-[#F5F5F7]/50">...</div>
+          ) : securityEvents.length === 0 ? (
+            <div className="p-12 text-center text-sm text-emerald-400 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+              {lang === 'uz' ? 'Xavfsizlik buzilishlari aniqlanmadi (Tizim toza)' : 'Нарушений не зафиксировано'}
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {securityEvents.map((evt) => (
+                <div key={evt.id} className="p-4 rounded-xl bg-[#090B12] border border-red-500/20 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs px-2.5 py-1 rounded-lg bg-red-500/20 text-red-300 font-bold">
+                      {evt.type} · {evt.severity}
+                    </span>
+                    <span className="text-xs text-[#F5F5F7]/50">{new Date(evt.createdAt).toLocaleString()}</span>
+                  </div>
+                  <p className="text-xs text-[#F5F5F7]">
+                    <strong>{evt.username}</strong> · IP: <code>{evt.ip}</code>
+                  </p>
+                  <p className="text-xs text-[#F5F5F7]/70 font-mono bg-white/5 p-2.5 rounded-lg">
+                    {evt.details}
+                  </p>
+                  <div className="flex items-center gap-2 pt-2">
+                    <span className="text-[11px] font-bold text-white/50">{evt.status}</span>
+                    {evt.status === 'PENDING' && (
+                      <div className="ml-auto flex items-center gap-2">
+                        <button
+                          onClick={() => handleReviewSecEvent(evt.id, 'ACTIONED')}
+                          className="px-3 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-xs font-bold text-white"
+                        >
+                          {lang === 'uz' ? 'Tasdiqlash (Chora ko‘rish)' : 'Подтвердить (Меры)'}
+                        </button>
+                        <button
+                          onClick={() => handleReviewSecEvent(evt.id, 'DISMISSED')}
+                          className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold text-white"
+                        >
+                          {lang === 'uz' ? 'Bekor qilish' : 'Отклонить'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SUB-TAB: SUPPORT TICKETS */}
+      {modSubTab === 'tickets' && (
+        <div className="space-y-4">
+          <p className="text-xs text-[#F5F5F7]/60">
+            {lang === 'uz' ? 'Foydalanuvchilardan kelgan murojaat va muammolar' : 'Тикеты поддержки пользователей'}
+          </p>
+          {supportTickets.length === 0 ? (
+            <div className="p-12 text-center text-sm text-[#F5F5F7]/50 rounded-2xl bg-[#090B12] border border-white/10">
+              {lang === 'uz' ? 'Hozircha ochiq murojaatlar yo‘q' : 'Обращений нет'}
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {supportTickets.map((tk) => (
+                <div key={tk.id} className="p-5 rounded-2xl bg-[#090B12] border border-white/10 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="font-mono text-xs text-[#E7B65B] font-bold">#{tk.id.slice(0, 8)}</span>
+                      <h4 className="text-sm font-bold text-[#F5F5F7] mt-0.5">{tk.subject}</h4>
+                      <p className="text-xs text-[#F5F5F7]/60">{tk.username} · {tk.priority}</p>
+                    </div>
+                    <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                      tk.status === 'RESOLVED' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-[#E7B65B]/20 text-[#E7B65B]'
+                    }`}>
+                      {tk.status}
+                    </span>
+                  </div>
+
+                  {/* Messages timeline */}
+                  <div className="space-y-2 pt-2 border-t border-white/10">
+                    {(tk.responses || []).map((m: any, idx: number) => (
+                      <div
+                        key={m.id || idx}
+                        className={`p-3 rounded-xl text-xs ${
+                          !m.isStaff ? 'bg-white/5 text-white/90' : 'bg-[#E63946]/15 border border-[#E63946]/30 text-white'
+                        }`}
+                      >
+                        <p className="font-bold text-[11px] text-white/50 mb-1">{m.authorName}</p>
+                        <p>{m.message}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Admin Reply Input */}
+                  <div className="flex items-center gap-2 pt-2">
+                    <input
+                      type="text"
+                      value={ticketReplyText[tk.id] || ''}
+                      onChange={(e) => setTicketReplyText((prev) => ({ ...prev, [tk.id]: e.target.value }))}
+                      placeholder={lang === 'uz' ? 'Admin nomidan javob yozish...' : 'Ответ администратора...'}
+                      className="flex-1 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white focus:outline-none focus:border-[#E63946]"
+                    />
+                    <button
+                      onClick={() => handleReplyTicket(tk.id)}
+                      className="px-4 py-2 rounded-xl bg-[#E63946] text-xs font-bold text-white hover:bg-[#E63946]/90 transition-colors"
+                    >
+                      {lang === 'uz' ? 'Yuborish' : 'Отправить'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SUB-TAB: ELO RANKING RESET */}
+      {modSubTab === 'eloReset' && (
+        <div className="p-6 rounded-2xl bg-[#110B12] border border-[#E63946]/30 space-y-4 max-w-xl">
+          <div className="flex items-center gap-3 text-[#E63946]">
+            <AlertTriangle className="w-6 h-6" />
+            <h3 className="font-display text-lg font-bold">
+              {lang === 'uz' ? 'Mavsumiy Elo Reyting Reset' : 'Сезонный сброс рейтинга Elo'}
+            </h3>
+          </div>
+          <p className="text-xs text-[#F5F5F7]/70 leading-relaxed">
+            {lang === 'uz'
+              ? 'Ushbu operatsiya barcha o‘yinchilar reytingini 1000 MMR ga tiklaydi, ammo ularning o‘yinlar soni, g‘alabalari va inventarini to‘liq saqlab qoladi.'
+              : 'Данная операция сбрасывает текущий MMR игроков к 1000, сохраняя при этом общее число матчей, побед и инвентарь.'}
+          </p>
+          <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs space-y-2">
+            <p className="text-white/80">
+              {lang === 'uz'
+                ? 'Tasdiqlash uchun quyidagi maydonga «RESET-CONFIRM» deb yozing:'
+                : 'Для подтверждения введите «RESET-CONFIRM»:'}
+            </p>
+            <input
+              type="text"
+              value={resetConfirmText}
+              onChange={(e) => setResetConfirmText(e.target.value)}
+              placeholder="RESET-CONFIRM"
+              className="w-full px-3 py-2 rounded-lg bg-[#090B12] border border-white/20 text-xs font-mono text-amber-300"
+            />
+          </div>
+          <button
+            onClick={handleResetElo}
+            disabled={resettingElo || resetConfirmText !== 'RESET-CONFIRM'}
+            className="px-5 py-2.5 rounded-xl bg-[#E63946] hover:bg-[#E63946]/90 disabled:opacity-40 text-xs font-bold text-white transition-colors"
+          >
+            {resettingElo
+              ? '...'
+              : lang === 'uz'
+                ? 'Reytinglarni tiklash'
+                : 'Выполнить сброс'}
+          </button>
         </div>
       )}
     </div>

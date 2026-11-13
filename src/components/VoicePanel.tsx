@@ -1,10 +1,10 @@
 import React from 'react';
-import { Mic, MicOff, PhoneCall, PhoneOff, Volume2 } from 'lucide-react';
+import { Mic, MicOff, PhoneCall, PhoneOff, Shield, Volume2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useVoiceChat } from '../hooks/useVoiceChat';
 
 export const VoicePanel: React.FC = () => {
-  const { socket, roomState, t } = useApp();
+  const { socket, roomState, token, lang, showToast, t } = useApp();
   const {
     status,
     isMuted,
@@ -20,6 +20,25 @@ export const VoicePanel: React.FC = () => {
 
   const myId = roomState.myPrivateData?.playerId;
   const me = roomState.players.find((p) => p.id === myId);
+
+  const handleMuteAllModeration = async () => {
+    if (!token || !me?.isHost) return;
+    try {
+      await fetch('/api/voice/moderate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          roomCode: roomState.code,
+          targetUserId: 'ALL',
+          targetUsername: 'All Room Peers',
+          action: 'ROOM_MUTE_ALL',
+        }),
+      });
+      showToast(lang === 'uz' ? 'Ovoz moderatsiyasi qo‘llandi' : 'Модерация голоса применена', 'info');
+    } catch {
+      // ignore
+    }
+  };
 
   const activeSpeakers = roomState.players.filter((p) => {
     if (p.id === myId) return status === 'connected' && isSpeaking;
@@ -87,6 +106,17 @@ export const VoicePanel: React.FC = () => {
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
+        {me?.isHost && token && (
+          <button
+            type="button"
+            onClick={handleMuteAllModeration}
+            title={lang === 'uz' ? 'Xona ovozini moderatsiya qilish' : 'Модерация голоса комнаты'}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#E7B65B]/15 hover:bg-[#E7B65B]/25 text-[#E7B65B] border border-[#E7B65B]/30 text-xs font-semibold transition-colors"
+          >
+            <Shield className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">{lang === 'uz' ? 'Moderatsiya' : 'Модерация'}</span>
+          </button>
+        )}
         {status === 'connected' ? (
           <>
             <button

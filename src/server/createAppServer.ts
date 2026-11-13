@@ -14,6 +14,8 @@ import {
   resolveVotingPhase,
   validateNightAction,
 } from '../engine/gameEngine';
+import { GoogleGenAI } from '@google/genai';
+import { DEFAULT_KNOWLEDGE_ARTICLES } from '../shared/ecosystemData';
 import {
   AdminModuleId,
   AdminRoleSlug,
@@ -22,8 +24,11 @@ import {
   ModulePermissionSet,
   PaymentProvider,
   PlayerState,
+  ReplayEvent,
+  ReplayRecord,
   RoleId,
   RoomSettings,
+  SecurityEventType,
   UserProfile,
 } from '../shared/types';
 import {
@@ -587,6 +592,360 @@ export function createAppServer(options?: { corsOrigin?: string }) {
     res.json(store.getSocialOverview(user.id));
   });
 
+  // ======================== ADVANCED GAMING ECOSYSTEM ROUTES ========================
+
+  // 1. ELO RANKING & LEADERBOARDS
+  app.get('/api/rankings/mode', (req, res) => {
+    const mode = typeof req.query.mode === 'string' ? (req.query.mode as GameMode) : undefined;
+    const period = (typeof req.query.period === 'string' ? req.query.period : 'GLOBAL') as
+      | 'GLOBAL'
+      | 'WEEKLY'
+      | 'MONTHLY'
+      | 'SEASONAL';
+    res.json({ leaderboard: store.getRankingsByMode(mode, period) });
+  });
+
+  app.get('/api/rankings/history', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    res.json({ history: store.getRatingHistory(user.id) });
+  });
+
+  // 2. SEASONS & BATTLE PASS
+  app.get('/api/seasons/active', (_req, res) => {
+    res.json({ season: store.getActiveSeason() });
+  });
+
+  app.get('/api/seasons/progress', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    const seasonId = typeof req.query.seasonId === 'string' ? req.query.seasonId : undefined;
+    res.json({ progress: store.getUserSeasonProgress(user.id, seasonId) });
+  });
+
+  app.post('/api/seasons/claim', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    const { level, track } = req.body || {};
+    const result = store.claimBattlePassReward(user.id, Number(level), track === 'VIP' ? 'VIP' : 'FREE');
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+    res.json({
+      success: true,
+      reward: result.reward,
+      progress: store.getUserSeasonProgress(user.id),
+      user: store.sanitizeUser(store.findUserById(user.id)!),
+    });
+  });
+
+  // 3. CLANS & GUILDS
+  app.get('/api/clans', (_req, res) => {
+    res.json({ clans: store.getClans() });
+  });
+
+  app.get('/api/clans/invitations/me', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    res.json({ invitations: store.getClanInvitationsForUser(user.id) });
+  });
+
+  app.get('/api/clans/:id', (req, res) => {
+    const clan = store.getClanById(String(req.params.id));
+    if (!clan) return res.status(404).json({ error: 'Clan not found' });
+    res.json({ clan });
+  });
+
+  app.post('/api/clans', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    const { name, tag, description, logoUrl } = req.body || {};
+    const result = store.createClan(user.id, String(name || ''), String(tag || ''), String(description || ''), String(logoUrl || ''));
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+    res.json({
+      clan: result.clan,
+      user: store.sanitizeUser(store.findUserById(user.id)!),
+    });
+  });
+
+  app.post('/api/clans/:id/invite', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    const result = store.sendClanInvite(String(req.params.id), user.id, String(req.body?.targetUserId));
+    if (!result.success) return res.status(400).json({ error: result.error });
+    res.json({ invitation: result.invitation });
+  });
+
+  app.post('/api/clans/invitations/:id/respond', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    const accept = Boolean(req.body?.accept);
+    const result = store.respondClanInvite(String(req.params.id), user.id, accept);
+    if (!result.success) return res.status(400).json({ error: result.error });
+    res.json({
+      success: true,
+      clan: result.clan,
+      user: store.sanitizeUser(store.findUserById(user.id)!),
+    });
+  });
+
+  app.post('/api/clans/leave', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    const result = store.leaveClan(user.id);
+    if (!result.success) return res.status(400).json({ error: result.error });
+    res.json({
+      success: true,
+      user: store.sanitizeUser(store.findUserById(user.id)!),
+    });
+  });
+
+  app.post('/api/clans/:id/announcements', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    const ok = store.addClanAnnouncement(String(req.params.id), user.id, String(req.body?.text || ''));
+    if (!ok) return res.status(403).json({ error: 'Permission denied or clan missing' });
+    res.json({ clan: store.getClanById(String(req.params.id)) });
+  });
+
+  // 4. MATCH REPLAYS
+  app.get('/api/replays', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    const filterMine = req.query.mine === 'true';
+    res.json({ replays: store.getReplays(filterMine ? user.id : undefined) });
+  });
+
+  app.get('/api/replays/:id', (req, res) => {
+    const replay = store.getReplayById(String(req.params.id));
+    if (!replay) return res.status(404).json({ error: 'Replay not found' });
+    res.json({ replay });
+  });
+
+  // 5. DIRECT MESSAGING (1-on-1)
+  app.get('/api/messages/conversations', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    res.json({ conversations: store.getConversations(user.id) });
+  });
+
+  app.get('/api/messages/:partnerId', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    res.json({ messages: store.getDirectMessages(user.id, String(req.params.partnerId)) });
+  });
+
+  app.post('/api/messages/send', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    const { recipientId, text } = req.body || {};
+    const result = store.sendDirectMessage(user.id, String(recipientId), String(text));
+    if (!result.success) return res.status(400).json({ error: result.error });
+
+    // Real-time socket delivery if recipient online
+    const recSocket = playerSockets.get(String(recipientId));
+    if (recSocket?.socketId) {
+      io.to(recSocket.socketId).emit('direct_message:new', result.message);
+    }
+    res.json({ message: result.message });
+  });
+
+  // 6. SPECTATOR & VOICE MODERATION
+  app.post('/api/spectate/:roomCode/join', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    store.addSpectator(String(req.params.roomCode), user.id, user.username);
+    res.json({ success: true, count: store.getSpectatorCount(String(req.params.roomCode)) });
+  });
+
+  app.post('/api/spectate/:roomCode/leave', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    store.removeSpectator(String(req.params.roomCode), user.id);
+    res.json({ success: true });
+  });
+
+  app.post('/api/voice/moderate', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    const { roomCode, targetUserId, targetUsername, action } = req.body || {};
+    const ev = store.logVoiceModeration(String(roomCode), String(targetUserId), String(targetUsername), action, user.id);
+    io.to(String(roomCode)).emit('voice:moderation', ev);
+    res.json({ event: ev });
+  });
+
+  // 7. SMART MATCHMAKING
+  app.post('/api/matchmaking/join', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    const mode = (req.body?.mode || 'CLASSIC') as GameMode;
+    const lang = (req.body?.lang || 'uz') as 'uz' | 'ru';
+    matchmakingResults.delete(user.id);
+    const ticket = {
+      userId: user.id,
+      username: user.username,
+      rating: user.rating,
+      mode,
+      lang,
+      queuedAt: Date.now(),
+      minRating: Math.max(100, user.rating - 150),
+      maxRating: user.rating + 150,
+    };
+    store.enqueueMatchmaking(ticket);
+    res.json({ queued: true, ticket });
+  });
+
+  app.post('/api/matchmaking/leave', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    store.dequeueMatchmaking(user.id);
+    matchmakingResults.delete(user.id);
+    res.json({ queued: false });
+  });
+
+  app.get('/api/matchmaking/status', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    const queue = store.getMatchmakingQueue();
+    const myTicket = queue.find((t) => t.userId === user.id);
+    const matched = matchmakingResults.get(user.id);
+    if (matched && Date.now() - matched.matchedAt > 120000) {
+      matchmakingResults.delete(user.id);
+    }
+    const validMatch = matchmakingResults.get(user.id);
+    res.json({
+      inQueue: Boolean(myTicket),
+      status: myTicket ? 'QUEUED' : validMatch ? 'MATCHED' : 'IDLE',
+      matchedRoomCode: validMatch?.code,
+      waitSec: myTicket ? Math.floor((Date.now() - myTicket.queuedAt) / 1000) : 0,
+      totalInQueue: queue.length,
+    });
+  });
+
+  // 8. REFERRALS & AFFILIATE
+  app.get('/api/referrals', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    const fullUser = store.findUserById(user.id);
+    res.json({
+      referralCode: fullUser?.referralCode || store.getReferralCode(fullUser!),
+      referralLink: `${req.protocol}://${req.get('host')}/?ref=${fullUser?.referralCode}`,
+      successfulCount: fullUser?.successfulReferralsCount || 0,
+      claimedMilestones: fullUser?.claimedReferralMilestones || [],
+      referrals: store.getReferralsForUser(user.id),
+    });
+  });
+
+  app.post('/api/referrals/apply', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    const result = store.applyReferralCode(user.id, String(req.body?.code || ''));
+    if (!result.success) return res.status(400).json({ error: result.error });
+    res.json({
+      success: true,
+      referrerName: result.referrerName,
+      user: store.sanitizeUser(store.findUserById(user.id)!),
+    });
+  });
+
+  app.post('/api/referrals/claim', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    const level = Number(req.body?.level);
+    const result = store.claimReferralMilestone(user.id, level);
+    if (!result.success) return res.status(400).json({ error: result.error });
+    res.json({
+      success: true,
+      reward: result.reward,
+      user: store.sanitizeUser(store.findUserById(user.id)!),
+    });
+  });
+
+  // 9. DETAILED PLAYER STATISTICS
+  app.get('/api/stats/player/:userId', (req, res) => {
+    const stats = store.getDetailedPlayerStats(String(req.params.userId));
+    if (!stats) return res.status(404).json({ error: 'Player stats not found' });
+    res.json({ stats });
+  });
+
+  // 10. AI SUPPORT ASSISTANT & KNOWLEDGE BASE
+  app.get('/api/support/kb', (req, res) => {
+    const q = typeof req.query.q === 'string' ? req.query.q : undefined;
+    const cat = typeof req.query.category === 'string' ? req.query.category : undefined;
+    res.json({ articles: store.getAiKnowledgeArticles(q, cat) });
+  });
+
+  app.get('/api/support/tickets', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    res.json({ tickets: store.getSupportTickets(user.id) });
+  });
+
+  app.post('/api/support/tickets', requireAuth, (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    const { subject, description, priority } = req.body || {};
+    if (!subject || !description) return res.status(400).json({ error: 'Subject and description required' });
+    const ticket = store.createSupportTicket(user.id, user.username, String(subject), String(description), priority);
+    res.json({ ticket });
+  });
+
+  app.post('/api/support/ai-chat', rateLimit(20, 60000), async (req, res) => {
+    try {
+      const { message, lang = 'uz' } = req.body || {};
+      const cleanMsg = String(message || '').trim().slice(0, 1000);
+      if (!cleanMsg) return res.status(400).json({ error: 'Message required' });
+
+      const geminiApiKey = process.env.GEMINI_API_KEY;
+      let reply = '';
+
+      if (geminiApiKey) {
+        try {
+          const aiClient = new GoogleGenAI();
+          const response = await aiClient.models.generateContent({
+            model: 'gemini-3.8-flash',
+            contents: cleanMsg,
+            config: {
+              systemInstruction: `You are the official MAFIA PRO AI Gaming Assistant. You explain rules, roles, VIP benefits, clans, tournaments, economy, and matchmaking for the MAFIA PRO platform. Respond helpfully and concisely in ${lang === 'uz' ? "O'zbek tilida" : "на русском языке"}. Base your answers on official MAFIA PRO rules and mechanics. If a user asks about account bans or payments refunds, kindly guide them to create an official support ticket in the Support tab.`,
+            },
+          });
+          reply = response.text?.trim() || '';
+        } catch (aiErr) {
+          console.warn('Gemini API call failed, falling back to KB retrieval:', aiErr);
+        }
+      }
+
+      // Authoritative Knowledge-Base Fallback if API key missing or rate-limited
+      if (!reply) {
+        const matches = store.getAiKnowledgeArticles(cleanMsg);
+        if (matches.length > 0) {
+          const top = matches[0];
+          reply =
+            lang === 'uz'
+              ? `📋 **${top.title.uz}**\n\n${top.content.uz}\n\n*Qo‘shimcha savollaringiz bo‘lsa, yozishingiz yoki rasmiy qo‘llab-quvvatlash chiptasi ochishingiz mumkin.*`
+              : `📋 **${top.title.ru}**\n\n${top.content.ru}\n\n*Если у вас остались вопросы, задайте их или создайте тикет в поддержку.*`;
+        } else {
+          reply =
+            lang === 'uz'
+              ? `Salom! Men MAFIA PRO sun'iy intellekt yordamchisiman. Men o‘yin qoidalari, Sherif va boshqa 18+ rollar, VIP obuna, Klanlar, reyting tizimi va do‘kon haqida ma'lumot bera olaman. Sizga qanday yordam bera olaman?`
+              : `Здравствуйте! Я официальный AI-ассистент MAFIA PRO. Могу объяснить правила игры, роли Шерифа, Доктора и других 18+ персонажей, VIP-подписку, Кланы, рейтинги и магазин. Чем я могу помочь?`;
+        }
+      }
+
+      res.json({ reply, timestamp: Date.now() });
+    } catch (err: unknown) {
+      res.status(500).json({ error: err instanceof Error ? err.message : 'AI support error' });
+    }
+  });
+
+  // 11. ADMIN EXTENSIONS FOR ECOSYSTEM
+  app.get('/api/admin/anti-cheat/events', requirePermission('system', 'read'), (req, res) => {
+    const status = typeof req.query.status === 'string' ? req.query.status : undefined;
+    res.json({ events: store.getSecurityEvents(status) });
+  });
+
+  app.post('/api/admin/anti-cheat/review/:id', requirePermission('system', 'edit'), (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    const { status, note } = req.body || {};
+    const ok = store.reviewSecurityEvent(String(req.params.id), user.username, status, note);
+    res.json({ success: ok });
+  });
+
+  app.post('/api/admin/rankings/reset', requirePermission('settings', 'delete'), (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    store.resetRankings({ id: user.id, username: user.username }, String(req.body?.reason || 'Seasonal reset'));
+    res.json({ success: true });
+  });
+
+  app.get('/api/admin/support/tickets', requirePermission('moderation', 'read'), (_req, res) => {
+    res.json({ tickets: store.getSupportTickets() });
+  });
+
+  app.post('/api/admin/support/tickets/:id/reply', requirePermission('moderation', 'edit'), (req, res) => {
+    const user = (req as Request & { user: UserProfile }).user;
+    const { message } = req.body || {};
+    const ok = store.addSupportTicketResponse(String(req.params.id), user.id, `${user.username} (Staff)`, true, String(message || ''));
+    res.json({ success: ok });
+  });
+
   // ======================== ADMIN API ROUTES ========================
 
   app.get('/api/site-settings', (_req, res) => {
@@ -1003,6 +1362,7 @@ export function createAppServer(options?: { corsOrigin?: string }) {
   const chatRateLimits = new Map<string, number>();
   const socketActionLimits = new Map<string, { count: number; resetAt: number }>();
   const roomVoicePeers = new Map<string, Set<string>>(); // roomCode -> Set<playerId>
+  const matchmakingResults = new Map<string, { code: string; matchedAt: number }>();
 
   function checkSocketRateLimit(playerId: string, maxEvents = 30, windowMs = 5000): boolean {
     const now = Date.now();
@@ -1027,12 +1387,15 @@ export function createAppServer(options?: { corsOrigin?: string }) {
 
   app.get('/api/rooms/public', (_req, res) => {
     const list = Array.from(rooms.values())
-      .filter((r) => !r.settings.isPrivate && r.phase === 'LOBBY')
+      .filter((r) => !r.settings.isPrivate && (r.phase === 'LOBBY' || (r.settings.allowSpectators && r.phase !== 'VICTORY')))
       .map((r) => ({
         code: r.code,
         name: r.name,
         mode: r.settings.mode,
+        phase: r.phase,
+        allowSpectators: r.settings.allowSpectators,
         playerCount: r.players.filter((p) => !p.isSpectator).length,
+        spectatorCount: r.players.filter((p) => p.isSpectator).length,
         maxPlayers: r.settings.maxPlayers,
         hostName: r.players.find((p) => p.isHost)?.username || 'Host',
       }));
@@ -1232,6 +1595,48 @@ export function createAppServer(options?: { corsOrigin?: string }) {
 
     store.recordGameResult(historyRecord);
     recordGameHistoryToPostgres(historyRecord);
+
+    // Update Elo ratings and Battle Pass progression for registered players
+    for (const p of historyRecord.players) {
+      if (!p.userId.startsWith('bot_') && !p.userId.startsWith('gst_')) {
+        const delta = p.won ? (room.settings.mode === 'CHAOS' ? 24 : 18) : -12;
+        store.recordRatingUpdate(
+          p.userId,
+          room.settings.mode,
+          delta,
+          historyRecord.id,
+          p.won ? 'MATCH_WIN' : 'MATCH_LOSS'
+        );
+        const xpEarned = p.won ? 150 + (p.survived ? 50 : 0) : 50;
+        store.addSeasonXp(p.userId, xpEarned);
+      }
+    }
+
+    // Save authoritative match replay
+    try {
+      store.saveReplay({
+        id: `rep_${historyRecord.id}`,
+        matchId: historyRecord.id,
+        roomCode: room.code,
+        mode: room.settings.mode,
+        rounds: room.round,
+        durationSec,
+        winner: winnerTeam,
+        players: historyRecord.players,
+        events: room.events.map((e) => ({
+          timestamp: e.timestamp,
+          round: e.round,
+          phase: e.phase,
+          type: 'PHASE_CHANGE' as ReplayEvent['type'],
+          targetId: e.targetPlayerId,
+          text: e.text.uz,
+        })),
+        createdAt: Date.now(),
+      });
+    } catch {
+      // Replay non-blocking
+    }
+
     broadcastRoomState(room.code);
   }
 
@@ -1389,9 +1794,13 @@ export function createAppServer(options?: { corsOrigin?: string }) {
         abilityUses: {},
       });
 
+      if (asSpectator) {
+        store.addSpectator(code, playerId, playerName);
+      }
+
       playerSockets.set(playerId, { socketId: socket.id, roomCode: code });
       socket.join(code);
-      pushSystemChat(code, `${playerName} joined the room.`);
+      pushSystemChat(code, asSpectator ? `${playerName} joined as spectator.` : `${playerName} joined the room.`);
       broadcastRoomState(code);
       socket.emit('chat:history', roomChat.get(code) || []);
       cb?.({ ok: true, code });
@@ -1433,6 +1842,7 @@ export function createAppServer(options?: { corsOrigin?: string }) {
       const room = rooms.get(code);
       if (!room) return;
       room.players = room.players.filter((p) => p.id !== playerId);
+      store.removeSpectator(code, playerId);
       removeVoicePeer(code, playerId);
       socket.leave(code);
       playerSockets.set(playerId, { socketId: socket.id, roomCode: undefined });
@@ -1811,6 +2221,36 @@ export function createAppServer(options?: { corsOrigin?: string }) {
       });
     });
 
+    // ======================== DIRECT MESSAGING VIA SOCKET ========================
+
+    socket.on('direct_message:send', (payload: { recipientId: string; text: string }, cb?: (res: unknown) => void) => {
+      if (!playerId || playerId.startsWith('gst_')) {
+        return cb?.({ ok: false, error: 'Registration required for direct messaging' });
+      }
+      const res = store.sendDirectMessage(playerId, payload.recipientId, payload.text);
+      if (res.success && res.message) {
+        const rec = playerSockets.get(payload.recipientId);
+        if (rec?.socketId) {
+          io.to(rec.socketId).emit('direct_message:new', res.message);
+        }
+        cb?.({ ok: true, message: res.message });
+      } else {
+        cb?.({ ok: false, error: res.error });
+      }
+    });
+
+    // ======================== SPECTATOR VIA SOCKET ========================
+
+    socket.on('spectate:join', (payload: { code: string }) => {
+      const code = String(payload?.code || '').toUpperCase();
+      const room = rooms.get(code);
+      if (room) {
+        store.addSpectator(code, playerId, playerName);
+        socket.join(code);
+        io.to(code).emit('spectator:count', { count: store.getSpectatorCount(code) });
+      }
+    });
+
     // ======================== DISCONNECT ========================
 
     socket.on('disconnect', () => {
@@ -1837,6 +2277,101 @@ export function createAppServer(options?: { corsOrigin?: string }) {
     });
   });
 
+  // Smart Matchmaking Queue Worker (checks every 5 seconds)
+  const matchmakingWorker = setInterval(() => {
+    for (const mode of ['CLASSIC', 'ADVANCED', 'CHAOS'] as GameMode[]) {
+      const matched = store.findMatches(mode, 4);
+      if (matched && matched.length >= 4) {
+        const code = generateRoomCode();
+        const host = matched[0];
+        const hostPlayer: PlayerState = {
+          id: host.userId,
+          username: host.username,
+          avatar: 'crimson',
+          isHost: true,
+          isReady: true,
+          isAlive: true,
+          isBot: false,
+          isConnected: true,
+          isSpectator: false,
+          isSilenced: false,
+          isFramed: false,
+          isJailed: false,
+          isDoused: false,
+          isInfected: false,
+          isMayorRevealed: false,
+          abilityCooldowns: {},
+          abilityUses: {},
+        };
+
+        const newRoom: InternalRoomState = {
+          code,
+          name: `${mode} Matchmaking Arena`,
+          settings: {
+            mode,
+            maxPlayers: 10,
+            timers: {
+              roleAssignment: 6,
+              night: 30,
+              day: 10,
+              discussion: 45,
+              voting: 25,
+              execution: 6,
+            },
+            isPrivate: false,
+            fillWithBots: false,
+            allowSpectators: true,
+          },
+          phase: 'LOBBY',
+          round: 0,
+          phaseEndsAt: Date.now(),
+          players: [hostPlayer],
+          nightActions: [],
+          nightFeedback: {},
+          votes: {},
+          events: [],
+          createdAt: Date.now(),
+          lastActivityAt: Date.now(),
+        };
+
+        // Add remaining matched players
+        for (let i = 1; i < matched.length; i++) {
+          newRoom.players.push({
+            id: matched[i].userId,
+            username: matched[i].username,
+            avatar: 'violet',
+            isHost: false,
+            isReady: true,
+            isAlive: true,
+            isBot: false,
+            isConnected: true,
+            isSpectator: false,
+            isSilenced: false,
+            isFramed: false,
+            isJailed: false,
+            isDoused: false,
+            isInfected: false,
+            isMayorRevealed: false,
+            abilityCooldowns: {},
+            abilityUses: {},
+          });
+        }
+
+        rooms.set(code, newRoom);
+        roomChat.set(code, []);
+        broadcastRoomState(code);
+
+        for (const m of matched) {
+          matchmakingResults.set(m.userId, { code, matchedAt: Date.now() });
+          const conn = playerSockets.get(m.userId);
+          if (conn?.socketId) {
+            io.to(conn.socketId).emit('matchmaking:matched', { code });
+          }
+        }
+      }
+    }
+  }, 5000);
+
   // Room expiration cleanup (2 hours inactivity)
   const cleanupInterval = setInterval(() => {
     const cutoff = Date.now() - 1000 * 60 * 120;
@@ -1854,6 +2389,7 @@ export function createAppServer(options?: { corsOrigin?: string }) {
 
   function closeServer(): Promise<void> {
     clearInterval(cleanupInterval);
+    clearInterval(matchmakingWorker);
     for (const t of roomTimers.values()) clearTimeout(t);
     roomTimers.clear();
     return new Promise((resolve) => {
